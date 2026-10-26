@@ -1,0 +1,6 @@
+{
+  "name": "Pharma Star App Pro",
+  "description": "Comprehensive interactive pharmaceutical suite featuring courses, 3D drug mechanism visualizations, drug interaction checker, lab interpretation, patient management, guideline updates, and pharmacist live consultation with offline access.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

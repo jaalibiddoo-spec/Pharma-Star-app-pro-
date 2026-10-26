@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1334" viewBox="0 0 750 1334">
+  <rect width="750" height="1334" fill="#020617"/>
+  <!-- Top bar -->
+  <rect width="750" height="100" fill="#0f172a"/>
+  <circle cx="60" cy="50" r="24" fill="#0d9488"/>
+  <text x="100" y="58" font-family="system-ui, sans-serif" font-size="26" font-weight="bold" fill="#ffffff">Pharmastar app pro</text>
+  <!-- Card 1 -->
+  <rect x="30" y="130" width="690" height="240" rx="20" fill="#0f172a" stroke="#1e293b" stroke-width="2"/>
+  <text x="60" y="190" font-family="system-ui, sans-serif" font-size="28" font-weight="bold" fill="#ffffff">Clinical Pharmacy Portal</text>
+  <text x="60" y="240" font-family="system-ui, sans-serif" font-size="18" fill="#2dd4bf">Lead Developer: Pharmacist Dawid Aliyi</text>
+  <text x="60" y="290" font-family="system-ui, sans-serif" font-size="16" fill="#94a3b8">10 Courses • 3D MOA • Lab &amp; DDI Checker</text>
+  <!-- Card 2: 3D MOA -->
+  <rect x="30" y="400" width="690" height="420" rx="20" fill="#0f172a" stroke="#1e293b" stroke-width="2"/>
+  <text x="60" y="460" font-family="system-ui, sans-serif" font-size="24" font-weight="bold" fill="#2dd4bf">3D Drug Mechanisms</text>
+  <circle cx="375" cy="620" r="100" fill="#042f2e" stroke="#14b8a6" stroke-width="6"/>
+  <text x="375" y="630" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#ffffff">GPCR • ACEi • PBP</text>
+  <!-- Card 3: Live consultation -->
+  <rect x="30" y="850" width="690" height="380" rx="20" fill="#0f172a" stroke="#1e293b" stroke-width="2"/>
+  <text x="60" y="910" font-family="system-ui, sans-serif" font-size="24" font-weight="bold" fill="#ffffff">Pharmacist Live Consultation</text>
+  <text x="60" y="960" font-family="system-ui, sans-serif" font-size="16" fill="#94a3b8">Active 24/7 • Offline Database Synced</text>
+</svg>

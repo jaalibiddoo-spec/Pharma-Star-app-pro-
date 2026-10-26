@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#020617"/>
+  <!-- Top Navigation Bar -->
+  <rect width="1280" height="60" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <circle cx="45" cy="30" r="16" fill="#0d9488"/>
+  <text x="75" y="36" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#ffffff">Pharmastar app pro</text>
+  <rect x="260" y="16" width="90" height="28" rx="6" fill="#0d9488"/>
+  <text x="305" y="34" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Courses</text>
+  <rect x="360" y="16" width="90" height="28" rx="6" fill="#1e293b"/>
+  <text x="405" y="34" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#94a3b8">3D MOA</text>
+  <rect x="460" y="16" width="120" height="28" rx="6" fill="#1e293b"/>
+  <text x="520" y="34" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#94a3b8">Drug Checker</text>
+  <rect x="590" y="16" width="130" height="28" rx="6" fill="#1e293b"/>
+  <text x="655" y="34" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#94a3b8">Lab Interpreter</text>
+  <!-- Content cards -->
+  <rect x="40" y="90" width="1200" height="140" rx="16" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="70" y="145" font-family="system-ui, sans-serif" font-size="24" font-weight="bold" fill="#ffffff">Clinical Pharmacy &amp; Pharmaceutical Sciences Suite</text>
+  <text x="70" y="180" font-family="system-ui, sans-serif" font-size="14" fill="#94a3b8">10 Comprehensive Courses, 3D Molecular Mechanisms, Offline Database &amp; Pharmacist Live Consultation</text>
+  <!-- Course cards grid -->
+  <rect x="40" y="260" width="380" height="420" rx="16" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <rect x="450" y="260" width="790" height="420" rx="16" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="70" y="300" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#2dd4bf">Pharmacology (PHARM-301)</text>
+  <text x="480" y="300" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#ffffff">Receptor Theory &amp; Signal Transduction</text>
+</svg>

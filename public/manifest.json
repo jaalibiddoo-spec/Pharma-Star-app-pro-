@@ -1,0 +1,94 @@
+{
+  "id": "pharmastar-app-pro",
+  "name": "Pharmastar app pro",
+  "short_name": "Pharmastar",
+  "description": "Comprehensive interactive pharmaceutical suite featuring courses, 3D drug mechanism visualizations, drug interaction checker, lab interpretation, patient management, guideline updates, and pharmacist live consultation with offline access.",
+  "author": {
+    "name": "Pharmacist Dawid Aliyi",
+    "email": "jaalibiddoo@gmail.com"
+  },
+  "developer": {
+    "name": "Pharmacist Dawid Aliyi",
+    "url": "https://ais-pre-mh4jmp6i4ovuyf4sqf523i-955023450528.europe-west2.run.app",
+    "email": "jaalibiddoo@gmail.com"
+  },
+  "publisher": "Pharmacist Dawid Aliyi",
+  "handle": "pharmastar",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#020617",
+  "theme_color": "#0d9488",
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "categories": ["medical", "education", "health", "books"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-desktop.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Pharmastar app pro Desktop View"
+    },
+    {
+      "src": "/screenshot-mobile.svg",
+      "sizes": "750x1334",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "Pharmastar app pro Mobile View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Academic Courses",
+      "short_name": "Courses",
+      "description": "10 comprehensive pharmacy courses",
+      "url": "/?tab=courses",
+      "icons": [{ "src": "/pwa-192x192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "3D Drug MOA Visualizer",
+      "short_name": "3D MOA",
+      "description": "Interactive Three.js molecular mechanisms",
+      "url": "/?tab=moa3d",
+      "icons": [{ "src": "/pwa-192x192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Drug Interaction Checker",
+      "short_name": "Drug Checker",
+      "description": "Check polypharmacy interactions and CYP450 enzymes",
+      "url": "/?tab=drug_checker",
+      "icons": [{ "src": "/pwa-192x192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Pharmacist Consultation",
+      "short_name": "Consultation",
+      "description": "Chat live with clinical pharmacist",
+      "url": "/?tab=live_chat",
+      "icons": [{ "src": "/pwa-192x192.svg", "sizes": "192x192" }]
+    }
+  ]
+}
