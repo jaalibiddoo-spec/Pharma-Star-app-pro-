@@ -16,30 +16,61 @@ import { AuthModal } from './components/AuthModal';
 import { OfflineManagerModal } from './components/OfflineManagerModal';
 import { PWAInstallModal } from './components/PWAInstallModal';
 import { DeveloperDownloadModal } from './components/DeveloperDownloadModal';
+import { CPDModuleHub } from './components/CPDModuleHub';
+import { SponsorshipsModule } from './components/SponsorshipsModule';
+import { PharmacyWiki } from './components/PharmacyWiki';
+import { OfficialWebsite } from './components/OfficialWebsite';
+import { RegistrationSuccessModal } from './components/RegistrationSuccessModal';
+import { StoreSupplyChainMonitor } from './components/StoreSupplyChainMonitor';
+import { PrescriptionAndInstitutionPortal } from './components/PrescriptionAndInstitutionPortal';
+import { ResearchPublishingPortal } from './components/ResearchPublishingPortal';
+import { AntiCounterfeitScanner } from './components/AntiCounterfeitScanner';
+import { AudioClinicalPearlsPlayer } from './components/AudioClinicalPearlsPlayer';
+import { EPSSLogisticsHubMap } from './components/EPSSLogisticsHubMap';
+import { AutomatedPaymentWebhookModal } from './components/AutomatedPaymentWebhookModal';
+import { GeminiAudioConversation } from './components/GeminiAudioConversation';
+import { PharmaTubeEntertainment } from './components/PharmaTubeEntertainment';
+import { DocumentToPptConverter } from './components/DocumentToPptConverter';
+import { DeveloperFeedbackSection } from './components/DeveloperFeedbackSection';
+import { EpidemicOutbreakCPD } from './components/EpidemicOutbreakCPD';
+import { InternetPackageStore } from './components/InternetPackageStore';
+import { ClinicalCalculator } from './components/ClinicalCalculator';
+import { ExitExamPortal } from './components/ExitExamPortal';
+import { WholesalerPortal } from './components/WholesalerPortal';
+import { GitHubSyncModal } from './components/GitHubSyncModal';
+import { UserPaymentHistoryModal } from './components/UserPaymentHistoryModal';
+import { AutoRecommendationModal } from './components/AutoRecommendationModal';
+import { InstitutionalSponsorDashboard } from './components/InstitutionalSponsorDashboard';
+import { AdminInstitutionalAnalytics } from './components/AdminInstitutionalAnalytics';
+import { getStoredUser, saveUserAndPayment } from './utils/userStorage';
+import { PaymentRecord } from './types';
 
 import { 
   Sparkles, BookOpen, Video, ShieldCheck, Stethoscope, 
   Activity, Users, Pill, Globe, Wifi, WifiOff, HardDrive, 
   KeyRound, CreditCard, Landmark, LogIn, LogOut, CheckCircle2, 
-  Menu, X, ChevronRight, MessageSquare, Smartphone, Download, Lock 
+  Menu, X, ChevronRight, MessageSquare, Smartphone, Download, Lock,
+  Award, Building2, BookMarked, ExternalLink, Layout, Package,
+  FileCheck2, Scan, Headphones, Truck, Presentation, Tv, Flame,
+  Radio, HelpCircle, Calculator, Store, Receipt, GitBranch, Github,
+  Share2, GraduationCap, BarChart3
 } from 'lucide-react';
 
 export default function App() {
+  const [viewMode, setViewMode] = useState<'website' | 'app'>('website');
   const [currentLang, setCurrentLang] = useState<Language>('en');
   const [activeTab, setActiveTab] = useState<
-    'courses' | 'moa3d' | 'drug_checker' | 'lab_interpreter' | 
-    'patient_history' | 'med_tracker' | 'live_chat' | 'guidelines'
+    'courses' | 'prescription_review' | 'research_publishing' | 'store_monitor' | 'cpd_modules' | 'wiki' | 
+    'moa3d' | 'drug_checker' | 'lab_interpreter' | 
+    'patient_history' | 'med_tracker' | 'live_chat' | 'guidelines' |
+    'sponsorships' | 'anti_counterfeit' | 'audio_pearls' | 'epss_logistics' |
+    'gemini_voice' | 'pharmatube' | 'doc_to_ppt' | 'developer_feedback' | 'outbreak_cpd' |
+    'internet_packages' | 'clinical_calc' | 'exit_exam' | 'wholesaler_portal' | 'institutional_sponsor' |
+    'admin_analytics'
   >('courses');
 
-  // User Authentication State
-  const [currentUser, setCurrentUser] = useState<User>({
-    username: "Pharmastar",
-    isPro: false,
-    fullName: "Pharmastar Member",
-    role: "pharmacist",
-    registrationDate: "2026-10-26",
-    offlineReady: true
-  });
+  // User Authentication State with localStorage cross-platform persistence and auto-remember
+  const [currentUser, setCurrentUser] = useState<User>(() => getStoredUser());
 
   // Offline Simulation State
   const [isOfflineSimulated, setIsOfflineSimulated] = useState(false);
@@ -50,9 +81,35 @@ export default function App() {
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [isDevDownloadOpen, setIsDevDownloadOpen] = useState(false);
+  const [isRegSuccessModalOpen, setIsRegSuccessModalOpen] = useState(false);
+  const [isGitHubSyncOpen, setIsGitHubSyncOpen] = useState(false);
+  const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
+  const [isRecommendModalOpen, setIsRecommendModalOpen] = useState(false);
   const [videoModalCourse, setVideoModalCourse] = useState<Course | null>(null);
   const [active3DModelId, setActive3DModelId] = useState<string>("gpcr_beta_blocker");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Cross-Platform Auto-Sync across Website and App
+  React.useEffect(() => {
+    const handleSync = () => {
+      try {
+        const saved = localStorage.getItem('pharmastar_registered_user');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setCurrentUser(parsed);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    window.addEventListener('pharmastar_auth_sync', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('pharmastar_auth_sync', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
 
   const t = translations[currentLang] || translations.en;
 
@@ -69,16 +126,84 @@ export default function App() {
     setActiveTab('drug_checker');
   };
 
-  const handleUpgradeSuccess = (refCode: string) => {
-    setCurrentUser(prev => ({
-      ...prev,
+  const handleUpgradeSuccess = (refCode: string, user?: User) => {
+    const updatedUser: User = user || {
+      ...currentUser,
       isPro: true,
-      cbeReference: refCode
-    }));
+      cbeReference: refCode,
+      membershipId: currentUser.membershipId || `PS-ET-${Date.now().toString().slice(-6)}`,
+      role: "pharmacist",
+      activatedAt: new Date().toISOString()
+    };
+
+    const newPayment: PaymentRecord = {
+      id: `pay-${Date.now()}`,
+      transactionRef: refCode || `CBE-${Date.now().toString().slice(-6)}`,
+      paymentMethod: 'CBE Birr',
+      amountETB: 100,
+      serviceName: 'Pharma Star Pro Registration & CPD Access',
+      serviceId: 'registration',
+      timestamp: new Date().toISOString(),
+      status: 'verified',
+      payerName: updatedUser.fullName
+    };
+
+    const saved = saveUserAndPayment(updatedUser, newPayment);
+    setCurrentUser(saved);
+    setIsRegSuccessModalOpen(true);
+  };
+
+  const handleUpgradeToService = (service: string, amount: number) => {
+    const updated: User = {
+      ...currentUser,
+      unlockedVoiceGeminiAgent: service === 'gemini_voice_agent' ? true : currentUser.unlockedVoiceGeminiAgent,
+      unlockedPharmaTube: service === 'pharmatube_entertainment' ? true : currentUser.unlockedPharmaTube,
+      unlockedDocToPpt: service === 'doc_to_ppt' ? true : currentUser.unlockedDocToPpt,
+      unlockedAutoReader: service === 'auto_reader' ? true : currentUser.unlockedAutoReader,
+      unlockedStoreMonitor: service === 'store_monitor' ? true : currentUser.unlockedStoreMonitor,
+      unlockedExitExam: service === 'exit_exam' ? true : currentUser.unlockedExitExam,
+      unlockedNgat: service === 'ngat' ? true : currentUser.unlockedNgat,
+      unlockedWholesaler: service === 'wholesaler' ? true : currentUser.unlockedWholesaler,
+      isPro: service === 'cpd_certificate' || service === 'pro_account' ? true : currentUser.isPro
+    };
+
+    const newPayment: PaymentRecord = {
+      id: `pay-${Date.now()}`,
+      transactionRef: `CBE-${Date.now().toString().slice(-6)}`,
+      paymentMethod: 'CBE Birr',
+      amountETB: amount,
+      serviceName: service.replace(/_/g, ' ').toUpperCase(),
+      serviceId: service,
+      timestamp: new Date().toISOString(),
+      status: 'verified',
+      payerName: currentUser.fullName
+    };
+
+    const saved = saveUserAndPayment(updated, newPayment);
+    setCurrentUser(saved);
+    setIsRegSuccessModalOpen(true);
   };
 
   const navItems = [
     { id: 'courses', label: t.courses, icon: BookOpen },
+    { id: 'exit_exam', label: 'Exit Exam & NGAT (50 Birr)', icon: GraduationCap },
+    { id: 'clinical_calc', label: 'Clinical Calculator (CrCl/BMI)', icon: Calculator },
+    { id: 'wholesaler_portal', label: 'Wholesaler Portal (500 Birr/3mo)', icon: Store },
+    { id: 'institutional_sponsor', label: 'Institutional Sponsor Dashboard', icon: Building2 },
+    { id: 'admin_analytics', label: 'Admin Demographics & Analytics', icon: BarChart3 },
+    { id: 'prescription_review', label: t.prescriptionReview, icon: FileCheck2 },
+    { id: 'gemini_voice', label: t.geminiVoice, icon: Headphones },
+    { id: 'pharmatube', label: t.pharmaTube, icon: Tv },
+    { id: 'doc_to_ppt', label: t.docToPpt, icon: Presentation },
+    { id: 'outbreak_cpd', label: 'Epidemic & Outbreak CPD (100 Birr)', icon: Flame },
+    { id: 'anti_counterfeit', label: t.antiCounterfeit, icon: Scan },
+    { id: 'audio_pearls', label: t.audioPearls, icon: Radio },
+    { id: 'epss_logistics', label: t.epssHubs, icon: Truck },
+    { id: 'developer_feedback', label: 'Developer Idea Vault (Private)', icon: Lock },
+    { id: 'research_publishing', label: t.researchPortal, icon: BookMarked },
+    { id: 'store_monitor', label: t.storeMonitor, icon: Package },
+    { id: 'cpd_modules', label: t.cpdModules, icon: Award },
+    { id: 'wiki', label: t.wiki, icon: Layout },
     { id: 'moa3d', label: t.moa3D, icon: Video },
     { id: 'drug_checker', label: t.drugChecker, icon: Pill },
     { id: 'lab_interpreter', label: t.labInterpretation, icon: Activity },
@@ -86,12 +211,31 @@ export default function App() {
     { id: 'med_tracker', label: t.medTracker, icon: Stethoscope },
     { id: 'live_chat', label: t.liveChat, icon: MessageSquare },
     { id: 'guidelines', label: t.guidelines, icon: ShieldCheck },
+    { id: 'sponsorships', label: t.sponsorships, icon: Building2 },
   ] as const;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-teal-500 selection:text-white">
-      {/* Top Banner: Free Access Credentials & CBE Payment Notice */}
-      <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-indigo-950 border-b border-teal-500/20 px-4 py-2 text-xs">
+    <>
+      {viewMode === 'website' ? (
+        <OfficialWebsite
+          onLaunchApp={(tab) => {
+            if (tab) setActiveTab(tab as any);
+            setViewMode('app');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenSubModal={() => setIsSubModalOpen(true)}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onOpenInstallModal={() => setIsInstallModalOpen(true)}
+          onOpenDevDownload={() => setIsDevDownloadOpen(true)}
+          currentLang={currentLang}
+          onLanguageChange={setCurrentLang}
+          isPro={currentUser.isPro}
+          currentUser={currentUser}
+        />
+      ) : (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-teal-500 selection:text-white">
+          {/* Top Banner: Free Access Credentials & CBE Payment Notice */}
+          <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-indigo-950 border-b border-teal-500/20 px-4 py-2 text-xs">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           {/* Free Login info */}
           <div className="flex items-center gap-2">
@@ -116,12 +260,51 @@ export default function App() {
             </span>
 
             <button
+              onClick={() => setIsGitHubSyncOpen(true)}
+              className="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 font-bold text-[11px] transition shadow cursor-pointer flex items-center gap-1"
+              title="Automatically upload updates and code to GitHub repository"
+            >
+              <Github className="w-3 h-3 text-teal-400" />
+              <span className="hidden sm:inline">GitHub Sync</span>
+            </button>
+
+            <button
+              onClick={() => setIsPaymentHistoryOpen(true)}
+              className="px-2.5 py-0.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-[11px] transition shadow cursor-pointer flex items-center gap-1"
+              title="View auto-remembered payments, CBE transactions, and electronic receipts"
+            >
+              <Receipt className="w-3 h-3 text-emerald-400" />
+              <span>My Payments ({currentUser.payments?.length || 0})</span>
+            </button>
+
+            <button
+              onClick={() => setIsRecommendModalOpen(true)}
+              className="px-2.5 py-0.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 font-bold text-[11px] transition shadow cursor-pointer flex items-center gap-1"
+              title="Auto-recommend app configuration for peers and institutions"
+            >
+              <Share2 className="w-3 h-3 text-indigo-400" />
+              <span className="hidden sm:inline">Recommend</span>
+            </button>
+
+            <button
               onClick={() => setIsDevDownloadOpen(true)}
               className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-[11px] transition shadow cursor-pointer flex items-center gap-1"
               title="Download standalone app package for Pharmacist Dawid Aliyi"
             >
               <Download className="w-3 h-3 text-amber-400" />
               <span>Download App (For Dawid)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setViewMode('website');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="px-2.5 py-0.5 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 font-bold text-[11px] transition shadow cursor-pointer flex items-center gap-1"
+              title="Return to Official Website Showcase & Portal"
+            >
+              <Globe className="w-3 h-3 text-teal-400" />
+              <span>🌐 Official Website</span>
             </button>
 
             <button
@@ -164,8 +347,22 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right Controls: Install App, Offline Sync, Language, User Profile */}
+          {/* Right Controls: Switch to Website, Install App, Offline Sync, Language, User Profile */}
           <div className="flex items-center gap-2">
+            {/* View Mode: Switch to Website */}
+            <button
+              onClick={() => {
+                setViewMode('website');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-bold transition shadow cursor-pointer"
+              title="Go to Official Website Showcase & Portal"
+            >
+              <Globe className="w-3.5 h-3.5 text-teal-400" />
+              <span className="hidden sm:inline">Website Portal</span>
+              <span className="sm:hidden">Web</span>
+            </button>
+
             {/* Install Android App Button */}
             <button
               onClick={() => setIsInstallModalOpen(true)}
@@ -318,6 +515,32 @@ export default function App() {
           <CoursesModule
             onOpenVideo={handleOpenVideo}
             onOpen3D={handleOpen3DFromCourse}
+            onOpenCPD={() => setActiveTab('cpd_modules')}
+            currentUser={currentUser}
+          />
+        )}
+
+        {/* Tab: Clinical Prescription Review, Site Providers & Institutions Communication Portal */}
+        {activeTab === 'prescription_review' && (
+          <PrescriptionAndInstitutionPortal
+            currentUser={currentUser}
+            onUpdateUser={setCurrentUser}
+            onOpenConsultation={() => setActiveTab('live_chat')}
+          />
+        )}
+
+        {/* Tab: Ethiopian Institutions Research Publishing Portal */}
+        {activeTab === 'research_publishing' && (
+          <ResearchPublishingPortal
+            currentUser={currentUser}
+          />
+        )}
+
+        {/* Tab: Store Stockcard & Bin Card Monitoring with IFRR Dispatch */}
+        {activeTab === 'store_monitor' && (
+          <StoreSupplyChainMonitor
+            currentUser={currentUser}
+            onUpdateUser={setCurrentUser}
           />
         )}
 
@@ -379,6 +602,91 @@ export default function App() {
         {activeTab === 'guidelines' && (
           <GuidelinesModule />
         )}
+
+        {/* Tab 9: MoH / EFDA CPD Modules & Certificates */}
+        {activeTab === 'cpd_modules' && (
+          <CPDModuleHub onOpenConsultation={() => setActiveTab('live_chat')} />
+        )}
+
+        {/* Tab 10: Clinical Pharmacy & Knowledge Base Wiki */}
+        {activeTab === 'wiki' && (
+          <PharmacyWiki
+            onNavigateToCourse={(cId) => setActiveTab('courses')}
+            onNavigateTo3D={(mId) => {
+              setActive3DModelId(mId);
+              setActiveTab('moa3d');
+            }}
+          />
+        )}
+
+        {/* Tab 11: Ethical Pharmaceutical & Medical Sponsorships */}
+        {activeTab === 'sponsorships' && (
+          <SponsorshipsModule />
+        )}
+
+        {/* Tab: Enterprise Institutional B2B Sponsor Dashboard */}
+        {activeTab === 'institutional_sponsor' && (
+          <InstitutionalSponsorDashboard
+            currentUser={currentUser}
+            onUpdateUser={setCurrentUser}
+          />
+        )}
+
+        {/* Tab: Administrative Intelligence & Demographic Census */}
+        {activeTab === 'admin_analytics' && (
+          <AdminInstitutionalAnalytics
+            currentUser={currentUser}
+          />
+        )}
+
+        {/* Tab: Clinical Calculator (Cockcroft-Gault CrCl, BMI/BSA, IV Drip) */}
+        {activeTab === 'clinical_calc' && (
+          <ClinicalCalculator />
+        )}
+
+        {/* Tab: Ethiopian Exit Exam & NGAT Preparation (50 Birr) */}
+        {activeTab === 'exit_exam' && (
+          <ExitExamPortal
+            currentUser={currentUser}
+            onUpdateUser={(updated) => {
+              const payment: PaymentRecord = {
+                id: `pay-${Date.now()}`,
+                transactionRef: updated.cbeReference || `CBE-EXIT-${Date.now().toString().slice(-6)}`,
+                paymentMethod: 'CBE Birr',
+                amountETB: 50,
+                serviceName: 'Ethiopian Exit Exam & NGAT Simulator',
+                serviceId: 'exit_exam',
+                timestamp: new Date().toISOString(),
+                status: 'verified',
+                payerName: updated.fullName
+              };
+              const saved = saveUserAndPayment(updated, payment);
+              setCurrentUser(saved);
+            }}
+          />
+        )}
+
+        {/* Tab: Wholesaler Inventory & B2B Communication Portal (500 Birr/3mo) */}
+        {activeTab === 'wholesaler_portal' && (
+          <WholesalerPortal
+            currentUser={currentUser}
+            onUpdateUser={(updated) => {
+              const payment: PaymentRecord = {
+                id: `pay-${Date.now()}`,
+                transactionRef: `CBE-WHL-${Date.now().toString().slice(-6)}`,
+                paymentMethod: 'CBE Birr',
+                amountETB: 500,
+                serviceName: 'Wholesaler Portal 3-Month Subscription',
+                serviceId: 'wholesaler',
+                timestamp: new Date().toISOString(),
+                status: 'verified',
+                payerName: updated.fullName
+              };
+              const saved = saveUserAndPayment(updated, payment);
+              setCurrentUser(saved);
+            }}
+          />
+        )}
       </main>
 
       {/* Footer */}
@@ -396,53 +704,106 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-[11px]">
+            <a
+              href="https://github.com/jaalibiddoo-spec/Pharma-Star-app-pro/wiki"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800"
+            >
+              <BookMarked className="w-3.5 h-3.5" />
+              <span>GitHub Wiki</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <span className="text-slate-600">•</span>
             <span>Bank: Commercial Bank of Ethiopia <strong className="text-white">1000262900367 (Dawid Aliyi)</strong></span>
             <span className="text-slate-600">•</span>
             <span>Registration: 100 Birr / $1.00 USD</span>
           </div>
         </div>
       </footer>
-
-      {/* Modals */}
-      {videoModalCourse && (
-        <VideoPlayerModal
-          course={videoModalCourse}
-          onClose={() => setVideoModalCourse(null)}
-          onLaunch3D={handleOpen3DFromCourse}
-        />
-      )}
-
-      <SubscriptionModal
-        isOpen={isSubModalOpen}
-        onClose={() => setIsSubModalOpen(false)}
-        onUpgradeSuccess={handleUpgradeSuccess}
-      />
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onLoginSuccess={(user) => setCurrentUser(user)}
-        onOpenProModal={() => setIsSubModalOpen(true)}
-      />
-
-      <OfflineManagerModal
-        isOpen={isOfflineModalOpen}
-        onClose={() => setIsOfflineModalOpen(false)}
-        isSimulatingOffline={isOfflineSimulated}
-        onToggleOffline={() => setIsOfflineSimulated(!isOfflineSimulated)}
-        isPro={currentUser.isPro}
-        onOpenProModal={() => setIsSubModalOpen(true)}
-      />
-
-      <PWAInstallModal
-        isOpen={isInstallModalOpen}
-        onClose={() => setIsInstallModalOpen(false)}
-      />
-
-      <DeveloperDownloadModal
-        isOpen={isDevDownloadOpen}
-        onClose={() => setIsDevDownloadOpen(false)}
-      />
     </div>
+  )}
+
+  {/* Modals */}
+  {videoModalCourse && (
+    <VideoPlayerModal
+      course={videoModalCourse}
+      onClose={() => setVideoModalCourse(null)}
+      onLaunch3D={handleOpen3DFromCourse}
+    />
+  )}
+
+  <SubscriptionModal
+    isOpen={isSubModalOpen}
+    onClose={() => setIsSubModalOpen(false)}
+    onUpgradeSuccess={handleUpgradeSuccess}
+  />
+
+  <AuthModal
+    isOpen={isAuthModalOpen}
+    onClose={() => setIsAuthModalOpen(false)}
+    onLoginSuccess={(user) => setCurrentUser(user)}
+    onOpenProModal={() => setIsSubModalOpen(true)}
+  />
+
+  <OfflineManagerModal
+    isOpen={isOfflineModalOpen}
+    onClose={() => setIsOfflineModalOpen(false)}
+    isSimulatingOffline={isOfflineSimulated}
+    onToggleOffline={() => setIsOfflineSimulated(!isOfflineSimulated)}
+    isPro={currentUser.isPro}
+    onOpenProModal={() => setIsSubModalOpen(true)}
+  />
+
+  <PWAInstallModal
+    isOpen={isInstallModalOpen}
+    onClose={() => setIsInstallModalOpen(false)}
+  />
+
+  <DeveloperDownloadModal
+    isOpen={isDevDownloadOpen}
+    onClose={() => setIsDevDownloadOpen(false)}
+  />
+
+  <RegistrationSuccessModal
+    isOpen={isRegSuccessModalOpen}
+    onClose={() => setIsRegSuccessModalOpen(false)}
+    user={currentUser}
+    onLaunchWorkstation={() => {
+      setViewMode('app');
+      setIsRegSuccessModalOpen(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }}
+    onViewWebsite={() => {
+      setViewMode('website');
+      setIsRegSuccessModalOpen(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }}
+  />
+
+  <GitHubSyncModal
+    isOpen={isGitHubSyncOpen}
+    onClose={() => setIsGitHubSyncOpen(false)}
+  />
+
+  <UserPaymentHistoryModal
+    isOpen={isPaymentHistoryOpen}
+    onClose={() => setIsPaymentHistoryOpen(false)}
+    currentUser={currentUser}
+    onUpdateUser={(updated) => {
+      setCurrentUser(updated);
+    }}
+  />
+
+  <AutoRecommendationModal
+    isOpen={isRecommendModalOpen}
+    onClose={() => setIsRecommendModalOpen(false)}
+    currentUser={currentUser}
+    onNavigateTab={(tab) => {
+      setActiveTab(tab);
+      setViewMode('app');
+    }}
+  />
+</>
   );
 }

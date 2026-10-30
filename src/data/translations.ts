@@ -34,6 +34,23 @@ export interface TranslationDictionary {
   askPharmacist: string;
   doseReminder: string;
   adherenceRate: string;
+  cpdModules: string;
+  cpdCertificates: string;
+  sponsorships: string;
+  consultations: string;
+  wiki: string;
+  storeMonitor: string;
+  prescriptionReview: string;
+  institutionPortal: string;
+  researchPortal: string;
+  antiCounterfeit: string;
+  audioPearls: string;
+  epssHubs: string;
+  geminiVoice: string;
+  pharmaTube: string;
+  docToPpt: string;
+  clinicalCalculator: string;
+  exitExam: string;
 }
 
 export const translations: Record<Language, TranslationDictionary> = {
@@ -41,6 +58,7 @@ export const translations: Record<Language, TranslationDictionary> = {
     appName: "Pharma Star App Pro",
     appTagline: "The Complete Clinical Pharmacy & Pharmaceutical Sciences Suite",
     courses: "Academic Courses",
+    storeMonitor: "Store & Bin Cards (IFRR)",
     readingMaterials: "Reading & Pearls",
     medTracker: "Medication Tracker",
     liveChat: "Pharmacist Live Chat",
@@ -70,7 +88,23 @@ export const translations: Record<Language, TranslationDictionary> = {
     pharmacistOnline: "Clinical Pharmacist On-Duty",
     askPharmacist: "Send inquiry to Clinical Pharmacist...",
     doseReminder: "Today's Dose Schedule",
-    adherenceRate: "Adherence Score"
+    adherenceRate: "Adherence Score",
+    cpdModules: "MoH / EFDA CPD Modules",
+    cpdCertificates: "Accredited CPD Certificates",
+    sponsorships: "Medical Sponsorships",
+    consultations: "Clinical Consultations (MTM)",
+    wiki: "Clinical Wiki & Knowledge Base",
+    prescriptionReview: "Prescription Review & Audit",
+    institutionPortal: "Institutions & Provider Portal",
+    researchPortal: "Ethiopian Research Publishing",
+    antiCounterfeit: "Anti-Counterfeit Barcode Scanner",
+    audioPearls: "Audio Pearls & Auto-Reader",
+    epssHubs: "EPSS Regional Logistics Hubs",
+    geminiVoice: "1-on-1 Gemini Voice Supporter (50 Birr)",
+    pharmaTube: "PharmaTube Lounge & Study Beats (100 Birr)",
+    docToPpt: "Document to PowerPoint PPT Converter (50 Birr)",
+    clinicalCalculator: "Clinical Calculators (CrCl, BMI, IV Drip)",
+    exitExam: "Exit Exam & NGAT Prep (50 Birr)"
   },
   am: {
     appName: "ፋርማ ስታር አፕ ፕሮ (Pharma Star App Pro)",
@@ -105,12 +139,30 @@ export const translations: Record<Language, TranslationDictionary> = {
     pharmacistOnline: "ክሊኒካል ፋርማሲስት ዝግጁ ነው",
     askPharmacist: "ለፋርማሲስቱ ጥያቄዎን ይላኩ...",
     doseReminder: "የዛሬ የመድኃኒት መርሃግብር",
-    adherenceRate: "የመውሰድ ምጣኔ"
+    adherenceRate: "የመውሰድ ምጣኔ",
+    cpdModules: "የጤና ጥበቃ / EFDA የሲፒዲ ኮርሶች",
+    cpdCertificates: "ህጋዊ የሲፒዲ ሰርተፊኬቶች",
+    sponsorships: "የመድኃኒት ፋብሪካዎች ስፖንሰርሺፕ",
+    consultations: "የክሊኒካል ፋርማሲስት ማማከር (MTM)",
+    wiki: "ክሊኒካል ዊኪ እና መመሪያ",
+    storeMonitor: "የመድኃኒት መጋዘን እና ቢን ካርድ (IFRR)",
+    prescriptionReview: "የሐኪም ማዘዣ ግምገማ እና ኦዲት",
+    institutionPortal: "የተቋማት እና ባለሙያዎች ግንኙነት ፖርታል",
+    researchPortal: "የኢትዮጵያ ተቋማት የምርምር ህትመት ፖርታል",
+    antiCounterfeit: "የመድኃኒት ባርኮድ እና ሐሰተኛ መመርመሪያ",
+    audioPearls: "የድምጽ ትምህርቶች እና አውቶ-አንባቢ (አማርኛ/ኦሮምኛ)",
+    epssHubs: "የኢትዮጵያ መድኃኒት አቅራቢ (EPSS) 19 ማዕከላት",
+    geminiVoice: "ከጄሚኒ ጋር የቀጥታ የድምጽ ውይይት (የ50 ብር ክፍያ)",
+    pharmaTube: "ፋርማቲዩብ እና የመዝናኛ ቪዲዮዎች (የ100 ብር ክፍያ)",
+    docToPpt: "ሰነዶችን ወደ ፓወርፖይንት (PPT) መቀየሪያ (የ50 ብር ክፍያ)",
+    clinicalCalculator: "የክሊኒካል ማስያ መሣሪያዎች (CrCl, BMI, IV Drip)",
+    exitExam: "የፋርማሲ መውጫ ፈተና እና NGAT ዝግጅት (50 ብር)"
   },
   om: {
     appName: "Faarmaa Istari Appii Pro",
     appTagline: "Sirna Barnoota Saayinsii Faarmaasii fi Yaalii Guutuu",
     courses: "Koorsoota Barnootaa",
+    storeMonitor: "Kuusaa Qorichaa fi Kaardii Binii (IFRR)",
     readingMaterials: "Dubbisa fi Qabxiilee Ijoo",
     medTracker: "Hordoffii Qorichaa",
     liveChat: "Haasaa Kallattii Ogeessa Faarmaasii",
@@ -140,12 +192,29 @@ export const translations: Record<Language, TranslationDictionary> = {
     pharmacistOnline: "Ogeessi Faarmaasii Qophiidha",
     askPharmacist: "Gaaffii kee ogeessaaf ergi...",
     doseReminder: "Sagantaa Qorichaa Har'aa",
-    adherenceRate: "Sadarkaa Qoricha Fudhatamaa"
+    adherenceRate: "Sadarkaa Qoricha Fudhatamaa",
+    cpdModules: "Koorsoota CPD MoH / EFDA",
+    cpdCertificates: "Waraqaa Ragaa CPD",
+    sponsorships: "Ispoosaroota Medikaalaa",
+    consultations: "Gorsaa Faarmaasii Yaalii (MTM)",
+    wiki: "Wiikii Yaalaa & Qajeelfama",
+    prescriptionReview: "Gamaggama Qorichaa (Prescription Review)",
+    institutionPortal: "Poortaalii Dhaabbilee fi Ogeessotaa",
+    researchPortal: "Poortaalii Maxxansa Qorannoo Dhaabbilee",
+    antiCounterfeit: "Iskanari Kaameraa & Mirkaneessa Qoricha Seera Qabeessa EFDA",
+    audioPearls: "Dubbisa Dokumantii Sagalee & Yaalii Afaaniin (50 Birr)",
+    epssHubs: "Kaartaa Harka Dhiheessii Qorichaa EPSS (Wiirtuuwwan 19)",
+    geminiVoice: "Haasaa Sagalee Kallattii Gemini Wajjin (Birrii 50)",
+    pharmaTube: "PharmaTube & Viidiyoowwan Bashannanaa (Birrii 100)",
+    docToPpt: "Dokumantii gara PPTtti Jijjiiruu (Birrii 50)",
+    clinicalCalculator: "Herrega Yaalaa & CrCl (CrCl, BMI, IV Drip)",
+    exitExam: "Qophii Qormaata Ba'umsaa & NGAT (Birrii 50)"
   },
   fr: {
     appName: "Pharma Star App Pro",
     appTagline: "Suite Complète de Pharmacie Clinique et Sciences Pharmaceutiques",
     courses: "Cours Académiques",
+    storeMonitor: "Gestion de Stock & Fiches de Casier (IFRR)",
     readingMaterials: "Supports et Perles Cliniques",
     medTracker: "Suivi des Traitements",
     liveChat: "Chat Pharmacien en Direct",
@@ -175,12 +244,29 @@ export const translations: Record<Language, TranslationDictionary> = {
     pharmacistOnline: "Pharmacien Clinique en Ligne",
     askPharmacist: "Envoyer un message au pharmacien...",
     doseReminder: "Calendrier des Prises",
-    adherenceRate: "Taux d'Observance"
+    adherenceRate: "Taux d'Observance",
+    cpdModules: "Modules DPC / EFDA & MoH",
+    cpdCertificates: "Certificats DPC Agréés",
+    sponsorships: "Sponsors Pharmaceutiques",
+    consultations: "Consultation Clinique 1-sur-1",
+    wiki: "Wiki Clinique & Docs",
+    prescriptionReview: "Revue & Audit d'Ordonnance",
+    institutionPortal: "Portail Institutions & Praticiens",
+    researchPortal: "Portail Publications Scientifiques",
+    antiCounterfeit: "Scanner Caméra & Vérification Anti-Contrefaçon EFDA",
+    audioPearls: "Lecteur Vocal de Documents & Perles Cliniques (50 Birr)",
+    epssHubs: "Carte Logistique & Stocks Régionaux EPSS (19 Hubs)",
+    geminiVoice: "Consultation Audio 1-à-1 avec Agent Gemini (50 Birr)",
+    pharmaTube: "PharmaTube & Espace Détente Musicale (100 Birr)",
+    docToPpt: "Convertisseur Document en Présentation PPT (50 Birr)",
+    clinicalCalculator: "Calculateurs Cliniques (ClCr, IMC, Débit IV)",
+    exitExam: "Préparation Examen de Sortie & NGAT (50 Birr)"
   },
   ar: {
     appName: "فارما ستار برو (Pharma Star App Pro)",
     appTagline: "المجموعة الشاملة للصيدلة السريرية والعلوم الصيدلانية",
     courses: "المقررات الأكاديمية",
+    storeMonitor: "مراقبة المخازن وبطاقات الأرفف (IFRR)",
     readingMaterials: "المراجع والمعلومات السريرية",
     medTracker: "تتبع الأدوية",
     liveChat: "محادثة صيدلي مباشر",
@@ -210,12 +296,27 @@ export const translations: Record<Language, TranslationDictionary> = {
     pharmacistOnline: "صيدلي سريري متواجد الآن",
     askPharmacist: "أرسل استفسارك للصيدلي السريري...",
     doseReminder: "جدول جرعات اليوم",
-    adherenceRate: "معدل الالتزام الدوائي"
+    adherenceRate: "معدل الالتزام الدوائي",
+    cpdModules: "وحدات التعليم الصيدلاني المستمر CPD",
+    cpdCertificates: "شهادات CPD معتمدة",
+    sponsorships: "الرعاية الصيدلانية الطبية",
+    consultations: "استشارات الصيدلة السريرية MTM",
+    wiki: "الويكي السريري والتوثيق",
+    prescriptionReview: "مراجعة وتدقيق الوصفات الطبية",
+    institutionPortal: "بوابة المؤسسات والتواصل المهني",
+    researchPortal: "بوابة نشر البحوث للمؤسسات الإثيوبية",
+    antiCounterfeit: "ماسح الباركود والتحقق من الأدوية المغشوشة EFDA",
+    audioPearls: "القارئ الصوتي للمستندات والفوائد السريرية (50 بر)",
+    epssHubs: "خريطة مراكز الإمداد الدوائي الإقليمية EPSS (19 مركزاً)",
+    geminiVoice: "استشارة صوتية مباشرة مع مساعد Gemini (50 بر)",
+    pharmaTube: "منصة فارما تيوب والترفيه الصيدلاني (100 بر)",
+    docToPpt: "تحويل المستندات إلى عروض تقديمية PPT (50 بر)"
   },
   es: {
     appName: "Pharma Star App Pro",
     appTagline: "Suite Integral de Farmacia Clínica y Ciencias Farmacéuticas",
     courses: "Cursos Académicos",
+    storeMonitor: "Gestión de Almacén y Tarjetas de Fila (IFRR)",
     readingMaterials: "Materiales y Perlas Clínicas",
     medTracker: "Seguimiento de Medicación",
     liveChat: "Chat Farmacéutico en Vivo",
@@ -245,6 +346,20 @@ export const translations: Record<Language, TranslationDictionary> = {
     pharmacistOnline: "Farmacéutico Clínico de Guardia",
     askPharmacist: "Consultar con el farmacéutico clínico...",
     doseReminder: "Horario de Medicación de Hoy",
-    adherenceRate: "Índice de Adherencia"
+    adherenceRate: "Índice de Adherencia",
+    cpdModules: "Módulos de Formación Continua (CPD)",
+    cpdCertificates: "Certificados CPD Acreditados",
+    sponsorships: "Patrocinios Farmacéuticos",
+    consultations: "Consulta Clínica Personalizada (MTM)",
+    wiki: "Wiki Clínico y Base de Conocimientos",
+    prescriptionReview: "Revisión y Auditoría de Recetas",
+    institutionPortal: "Portal de Instituciones y Profesionales",
+    researchPortal: "Portal de Publicaciones Científicas Institucionales",
+    antiCounterfeit: "Escáner de Código y Verificación Anti-Falsificación EFDA",
+    audioPearls: "Lector de Documentos y Perlas Clínicas (50 Birr)",
+    epssHubs: "Mapa de Centros de Suministro Regional EPSS (19 Hubs)",
+    geminiVoice: "Consulta de Audio 1-a-1 con Agente Gemini (50 Birr)",
+    pharmaTube: "PharmaTube y Zona de Entretenimiento (100 Birr)",
+    docToPpt: "Conversor de Documentos a Presentación PPT (50 Birr)"
   }
 };

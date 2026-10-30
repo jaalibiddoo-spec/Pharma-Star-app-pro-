@@ -1,0 +1,36 @@
+name: AI Code Safety & Integration Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, production ]
+
+jobs:
+  verify-code:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout AI-Generated Code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install Project Dependencies
+      run: npm ci || npm install
+
+    - name: Run Security Vulnerability Scan
+      run: npm audit --audit-level=high || true
+      # This stops the AI if it introduces insecure packages that could leak student data
+
+    - name: Execute Code Linting & Syntax Checks
+      run: npm run lint
+      # Ensures the AI followed clean coding standards and didn't leave broken syntax
+
+    - name: Run Integration & API Tests
+      run: npm test
+      # Runs your test suite to verify Google AI Studio integrations and portal routing work

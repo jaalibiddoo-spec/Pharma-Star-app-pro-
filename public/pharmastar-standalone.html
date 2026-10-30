@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pharmastar app pro - Complete Standalone Edition</title>
+  <meta name="description" content="All-in-one standalone single-file edition of Pharmastar App Pro by Pharmacist Dawid Aliyi." />
+  <meta name="author" content="Pharmacist Dawid Aliyi" />
+  <meta name="theme-color" content="#0d9488" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js for 3D Drug Mechanism Visualizer -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <!-- React & Babel Standalone -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+    code, pre {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(13, 148, 136, 0.8);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased selection:bg-teal-500 selection:text-white">
+  <div id="root"></div>
+
+  <!-- Single-File React + Three.js Application Script -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- Embedded Database: 10 Pharmacy Curriculum Courses ---
+    const COURSES_DATA = [
+      {
+        id: "pharmacology",
+        code: "PHARM-301",
+        title: "Pharmacology",
+        level: "Year 3 / Core",
+        duration: "16 Weeks (64 Hours)",
+        has3D: true,
+        moaId: "gpcr",
+        description: "Receptor-ligand binding kinetics, GPCR signal cascades (Gs, Gi, Gq), competitive vs non-competitive antagonism, autonomic and cardiovascular agents.",
+        modules: [
+          {
+            title: "Receptor Theory & Signal Transduction",
+            content: "Pharmacodynamics examines the biochemical and physiologic effects of drugs. GPCRs (7-transmembrane) utilize Gs to increase cAMP, Gi to inhibit adenylyl cyclase, and Gq to stimulate PLC-beta, generating IP3 and DAG for intracellular calcium mobilization.",
+            pearls: [
+              "Buprenorphine is a partial mu-opioid agonist; administering it with full agonists precipitates severe withdrawal.",
+              "Esmolol has an ultra-short half-life (9 mins) due to rapid hydrolysis by RBC esterases.",
+              "Therapeutic Index = TD50 / ED50. Narrow therapeutic index drugs require regular TDM."
+            ]
+          }
+        ]
+      },
+      {
+        id: "pharmacotherapy",
+        code: "PHARM-401",
+        title: "Pharmacotherapy",
+        level: "Year 4 / Clinical",
+        duration: "18 Weeks (72 Hours)",
+        has3D: true,
+        moaId: "acei",
+        description: "Evidence-based clinical disease state management: HFrEF 4 Pillars GDMT, Type 2 Diabetes cardiorenal protection, asthma, and hospital infections.",
+        modules: [
+          {
+            title: "Heart Failure with Reduced Ejection Fraction (GDMT)",
+            content: "Class 1 recommendation to initiate 4 Pillars: 1) ARNI (Sacubitril/Valsartan) or ACEi/ARB (observe 36h washout when switching from ACEi to avoid angioedema), 2) Beta-blocker (Carvedilol, Metoprolol Succinate, Bisoprolol), 3) MRA (Spironolactone), 4) SGLT2i (Empagliflozin/Dapagliflozin).",
+            pearls: [
+              "Recheck potassium and creatinine 1-2 weeks after starting ACEi/ARB or Spironolactone.",
+              "Use NT-proBNP instead of BNP when patient is on Sacubitril/Valsartan."
+            ]
+          }
+        ]
+      },
+      {
+        id: "toxicology",
+        code: "TOX-402",
+        title: "Toxicology",
+        level: "Year 4 / Clinical",
+        duration: "14 Weeks (56 Hours)",
+        has3D: true,
+        moaId: "ache",
+        description: "Clinical poisonings, 5 classic toxidromes, organophosphates (DUMBELS), Acetaminophen overdose nomogram, heavy metal chelators, and specific antidotes.",
+        modules: [
+          {
+            title: "Organophosphate Toxicity & Antidote Protocols",
+            content: "Organophosphates phosphorylate the esteratic site of acetylcholinesterase, causing lethal accumulation of acetylcholine. Killer Bs: Bronchospasm, Bronchorrhea, and Bradycardia cause fatal respiratory arrest. Resuscitate with Atropine (titrate until pulmonary secretions dry) followed by Pralidoxime (2-PAM).",
+            pearls: [
+              "Never give succinylcholine in organophosphate poisoning due to prolonged paralysis.",
+              "Carbamate toxicity is self-limiting and lacks 'aging', but still requires Atropine."
+            ]
+          }
+        ]
+      },
+      {
+        id: "industrial_pharmacy",
+        code: "IND-302",
+        title: "Industrial Pharmacy",
+        level: "Year 3 / Industrial",
+        duration: "16 Weeks",
+        has3D: false,
+        description: "cGMP standards, tableting technology, powder flowability (Carr's Index), tablet defects (capping, lamination, picking, sticking), and cleanroom HVAC validation.",
+        modules: [
+          {
+            title: "Solid Dosage Form Manufacturing & Defects",
+            content: "Capping is caused by air entrapment and excessive fines. Picking and sticking occur when punch faces are pitted or moisture exceeds 3%. Over-blending magnesium stearate creates hydrophobic barriers that retard tablet dissolution.",
+            pearls: [
+              "Carr's index < 15% and Hausner ratio < 1.18 signify excellent powder flow for rotary presses."
+            ]
+          }
+        ]
+      },
+      {
+        id: "pharmacy_practice",
+        code: "PRAC-303",
+        title: "Pharmacy Practice",
+        level: "Year 3 & 4 / Professional",
+        duration: "14 Weeks",
+        has3D: false,
+        description: "Hospital & community dispensing, IHS 3 Prime Questions patient counseling, LASA medication safety, pharmacovigilance Yellow Card ADR reporting.",
+        modules: [
+          {
+            title: "Prescription Auditing & Patient Counseling",
+            content: "Screening prescriptions for dose, duration, allergies, and contraindications. IHS Prime Questions: 1) What did doctor tell you drug is for? 2) How to take it? 3) What to expect? Use Naranjo algorithm (>9 definite) for causality assessment.",
+            pearls: [
+              "Tall-Man lettering (predniSONE vs prednisoLONE) prevents fatal look-alike sound-alike errors."
+            ]
+          }
+        ]
+      },
+      {
+        id: "biopharmaceutics",
+        code: "BIOPH-403",
+        title: "Biopharmaceuticals",
+        level: "Year 4 / Advanced",
+        duration: "16 Weeks",
+        has3D: true,
+        moaId: "liposome",
+        description: "BCS classification (Classes I-IV), bioequivalence (90% CI 80-125%), IVIVC, monoclonal antibodies, FcRn recycling, and lipid nanoparticle drug delivery.",
+        modules: [
+          {
+            title: "BCS System & Nanocarrier Delivery",
+            content: "BCS Class II drugs (low solubility, high permeability) benefit from lipid nanocarriers and solid dispersions. Monoclonal antibodies enjoy a ~21-day half-life due to FcRn salvage receptor recycling.",
+            pearls: [
+              "Bioequivalence mandates the 90% confidence interval for AUC and Cmax falls within 80.00% to 125.00%."
+            ]
+          }
+        ]
+      },
+      {
+        id: "medicinal_chemistry",
+        code: "MEDCHEM-304",
+        title: "Medicinal Chemistry",
+        level: "Year 3 / Chemical",
+        duration: "16 Weeks",
+        has3D: true,
+        moaId: "pbp",
+        description: "Structure-Activity Relationships (SAR), strained 4-membered beta-lactam rings, bioisosterism, prodrug design, and suicide enzyme inactivation.",
+        modules: [
+          {
+            title: "Beta-Lactam SAR & Mechanism of Suicide Inhibition",
+            content: "The strained 4-membered beta-lactam ring mimics the D-Ala-D-Ala terminus of peptidoglycan. Clavulanic acid and Tazobactam serve as irreversible suicide inhibitors of beta-lactamase enzymes.",
+            pearls: [
+              "Bulky side chains (Oxacillin) sterically shield the beta-lactam ring against staphylococcal penicillinase."
+            ]
+          }
+        ]
+      },
+      {
+        id: "physical_pharmaceutics",
+        code: "PHYS-201",
+        title: "Integrated Physical Pharmaceutics",
+        level: "Year 2 & 3",
+        duration: "16 Weeks",
+        has3D: false,
+        description: "Noyes-Whitney dissolution kinetics, colloidal dispersions, DLVO theory, zeta potential (mV), Ostwald ripening, and non-Newtonian thixotropy.",
+        modules: [
+          {
+            title: "Dissolution Kinetics & Rheology",
+            content: "Noyes-Whitney equation: dM/dt = (D * S / h) * (Cs - C). Micronization boosts surface area S to accelerate dissolution. Pharmaceutical suspensions require pseudoplastic flow with thixotropy.",
+            pearls: [
+              "Zeta potential > +30 mV or < -30 mV ensures electrostatic repulsion to prevent compact caking."
+            ]
+          }
+        ]
+      },
+      {
+        id: "pharmacognosy",
+        code: "PCOG-202",
+        title: "Pharmacognosy & Phytochemistry",
+        level: "Year 2 & 3",
+        duration: "14 Weeks",
+        has3D: false,
+        description: "Bioactive secondary plant metabolites, Artemisia annua artemisinin, Catha edulis (Khat) cathinone pharmacology, Digitalis, and herb-drug interactions.",
+        modules: [
+          {
+            title: "Artemisinin & Alkaloid Therapeutics",
+            content: "Artemisinin contains an essential endoperoxide bridge that cleaves in the presence of intraparasitic iron to produce lethal carbon-centered free radicals against Plasmodium falciparum.",
+            pearls: [
+              "St. John's Wort strongly induces CYP3A4 and P-gp, dramatically lowering levels of cyclosporine and oral contraceptives."
+            ]
+          }
+        ]
+      },
+      {
+        id: "internship_practice",
+        code: "INTERN-501",
+        title: "Internship Practice for Students & Professionals",
+        level: "Year 5 / Clerkship",
+        duration: "52 Weeks",
+        has3D: false,
+        description: "Hospital clinical ward rounds, ICU FAST-HUGS BID checklist, clinical SOAP documentation, and Cockcroft-Gault CrCl calculations.",
+        modules: [
+          {
+            title: "Ward Pre-Rounds & SOAP Progress Documentation",
+            content: "Systematic hospital ward workflow: S (Subjective complaints), O (Vitals, cultures, CrCl, LFTs), A (Etiology, drug therapy evaluation, DDI risk), P (Dosing interventions, duration, and lab monitoring).",
+            pearls: [
+              "Always calculate Cockcroft-Gault CrCl rather than MDRD eGFR when adjusting renally eliminated medications."
+            ]
+          }
+        ]
+      }
+    ];
+
+    // --- Embedded Drug Interactions Matrix ---
+    const DRUG_INTERACTIONS = [
+      {
+        drugA: "Warfarin",
+        drugB: "Ibuprofen",
+        severity: "major",
+        mechanism: "Platelet COX-1 inhibition and gastric mucosal injury combined with Vitamin K antagonism.",
+        effect: "Severe life-threatening upper gastrointestinal bleeding and elevated INR.",
+        action: "Avoid combination. Substitute Acetaminophen (max 2g/day) or topical analgesic."
+      },
+      {
+        drugA: "Lisinopril",
+        drugB: "Spironolactone",
+        severity: "major",
+        mechanism: "Synergistic inhibition of aldosterone synthesis and receptor antagonism in renal collecting tubule.",
+        effect: "Severe hyperkalemia (K+ > 5.5 - 6.5 mEq/L) with peaked T waves and ventricular arrhythmias.",
+        action: "Check baseline eGFR (>30) and K+ (<5.0). Monitor BMP at 1 and 4 weeks."
+      },
+      {
+        drugA: "Clopidogrel",
+        drugB: "Omeprazole",
+        severity: "major",
+        mechanism: "Omeprazole irreversibly inhibits CYP2C19, the enzyme required to bioactivate clopidogrel prodrug.",
+        effect: "45% reduction in antiplatelet effect, increasing risk of stent thrombosis and recurrent MI.",
+        action: "Switch to Pantoprazole or Famotidine (H2RA) which do not inhibit CYP2C19."
+      },
+      {
+        drugA: "Simvastatin",
+        drugB: "Clarithromycin",
+        severity: "major",
+        mechanism: "Clarithromycin is a potent CYP3A4 inhibitor, causing a 10-fold surge in simvastatin exposure.",
+        effect: "High risk of fatal rhabdomyolysis and acute renal failure.",
+        action: "Hold Simvastatin during macrolide therapy or use Azithromycin."
+      }
+    ];
+
+    // --- Embedded Lab Interpretation Database ---
+    const LAB_TESTS = [
+      {
+        name: "Serum Creatinine (Scr)",
+        unit: "mg/dL",
+        normal: "0.6 - 1.3 mg/dL",
+        elevated: "Acute Kidney Injury, CKD, dehydration, or nephrotoxins.",
+        action: "Calculate Cockcroft-Gault CrCl immediately. Reduce doses of renally cleared drugs (DOACs, Enoxaparin, Cefepime, Levofloxacin)."
+      },
+      {
+        name: "Serum Potassium (K+)",
+        unit: "mEq/L",
+        normal: "3.5 - 5.0 mEq/L",
+        elevated: "Hyperkalemia risk: peaked T waves, conduction block, cardiac arrest. Causes: ACEi/ARB, Spironolactone, CKD.",
+        action: "If K+ > 6.0: Calcium Gluconate IV for cardiac stabilization, Insulin + Dextrose, and potassium binders."
+      },
+      {
+        name: "INR / Prothrombin Time",
+        unit: "Ratio",
+        normal: "0.8 - 1.1 (Target: 2.0 - 3.0 on Warfarin)",
+        elevated: "Hemorrhagic risk. If INR > 4.5-10 without bleed: hold 1-2 doses. If bleeding: IV Vitamin K + 4F-PCC.",
+        action: "Adjust weekly Warfarin dose by 10-20% increments."
+      },
+      {
+        name: "Vancomycin Serum Trough",
+        unit: "mcg/mL",
+        normal: "10 - 20 mcg/mL (Target: 15-20 in severe MRSA)",
+        elevated: "Trough > 20 mcg/mL causes nephrotoxicity and ototoxicity.",
+        action: "Hold dose and extend interval (e.g. q12h to q24h). Monitor Serum Creatinine daily."
+      }
+    ];
+
+    // --- Embedded Guidelines ---
+    const GUIDELINES = [
+      {
+        title: "EFDA Ethiopian Essential Medicines List & Good Prescribing",
+        authority: "EFDA / MoH Ethiopia (2025/2026)",
+        category: "National (Ethiopia)",
+        summary: "Standard treatment protocols for primary, general, and tertiary specialized hospitals in Ethiopia. Strict generic prescribing and VEN inventory management."
+      },
+      {
+        title: "National Tuberculosis, Leprosy & MDR-TB Manual (Ethiopia)",
+        authority: "MoH Ethiopia (2025)",
+        category: "National (Ethiopia)",
+        summary: "Shortened all-oral 6-month BPaLM regimen (Bedaquiline, Pretomanid, Linezolid, Moxifloxacin) with mandatory ECG QTc monitoring."
+      },
+      {
+        title: "WHO Model List of Essential Medicines & AWaRe Antibiotics",
+        authority: "World Health Organization (WHO 2026)",
+        category: "International",
+        summary: "Global antimicrobial stewardship classifying antibiotics into Access (Amoxicillin), Watch (Fluoroquinolones), and Reserve (Colistin, Linezolid)."
+      },
+      {
+        title: "ADA Standards of Care in Diabetes (2026)",
+        authority: "American Diabetes Association",
+        category: "International",
+        summary: "Early cardiorenal organ protection: SGLT2 inhibitor + GLP-1 RA for T2D patients with established ASCVD, heart failure, or CKD regardless of baseline A1c."
+      }
+    ];
+
+    // --- 3D WebGL Canvas Component using Three.js ---
+    function MechanismVisualizer3D({ modelType }) {
+      const mountRef = useRef(null);
+
+      useEffect(() => {
+        const container = mountRef.current;
+        if (!container) return;
+
+        const width = container.clientWidth || 700;
+        const height = 400;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050b14);
+
+        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+        camera.position.set(0, 2, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.replaceChildren(renderer.domElement);
+
+        // Lighting
+        const keyLight = new THREE.DirectionalLight(0x2dd4bf, 2);
+        keyLight.position.set(5, 5, 5);
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0x38bdf8, 1);
+        fillLight.position.set(-5, -3, -3);
+        scene.add(fillLight);
+
+        const ambientLight = new THREE.AmbientLight(0x1e293b, 1.5);
+        scene.add(ambientLight);
+
+        const group = new THREE.Group();
+
+        if (modelType === 'gpcr') {
+          // 7 Transmembrane Helices
+          for (let i = 0; i < 7; i++) {
+            const angle = (i / 7) * Math.PI * 2;
+            const geo = new THREE.CylinderGeometry(0.2, 0.2, 3.5, 16);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.3 });
+            const helix = new THREE.Mesh(geo, mat);
+            helix.position.set(Math.cos(angle) * 1.2, 0, Math.sin(angle) * 1.2);
+            group.add(helix);
+          }
+          // Ligand (Propranolol blocker)
+          const ligGeo = new THREE.DodecahedronGeometry(0.5);
+          const ligMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x78350f });
+          const ligand = new THREE.Mesh(ligGeo, ligMat);
+          ligand.position.set(0, 1.2, 0);
+          group.add(ligand);
+        } else if (modelType === 'acei') {
+          // ACE Zinc metalloprotease cleft
+          const cleftGeo = new THREE.TorusGeometry(2, 0.6, 16, 32, Math.PI * 1.5);
+          const cleftMat = new THREE.MeshStandardMaterial({ color: 0x0f766e, metalness: 0.4 });
+          const cleft = new THREE.Mesh(cleftGeo, cleftMat);
+          group.add(cleft);
+
+          // Central Zn2+ ion
+          const znGeo = new THREE.SphereGeometry(0.4, 24, 24);
+          const znMat = new THREE.MeshStandardMaterial({ color: 0xe0e7ff, metalness: 0.9, emissive: 0x6366f1 });
+          const zn = new THREE.Mesh(znGeo, znMat);
+          group.add(zn);
+        } else {
+          // Nanocarrier / PBP sphere
+          const vesicleGeo = new THREE.SphereGeometry(2, 32, 16, 0, Math.PI * 1.6);
+          const vesicleMat = new THREE.MeshStandardMaterial({ color: 0x14b8a6, side: THREE.DoubleSide });
+          const vesicle = new THREE.Mesh(vesicleGeo, vesicleMat);
+          group.add(vesicle);
+
+          // Drug payload
+          for (let j = 0; j < 12; j++) {
+            const rod = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+            rod.position.set((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2);
+            group.add(rod);
+          }
+        }
+
+        scene.add(group);
+
+        let animId;
+        const animate = () => {
+          group.rotation.y += 0.008;
+          renderer.render(scene, camera);
+          animId = requestAnimationFrame(animate);
+        };
+        animate();
+
+        return () => {
+          cancelAnimationFrame(animId);
+          renderer.dispose();
+        };
+      }, [modelType]);
+
+      return (
+        <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shadow-xl">
+          <div className="absolute top-3 left-3 z-10 bg-slate-900/90 border border-slate-700 px-3 py-1 rounded-lg text-xs font-bold text-teal-400">
+            Interactive 3D Molecular Simulation • Three.js WebGL
+          </div>
+          <div ref={mountRef} className="w-full h-full cursor-grab" />
+        </div>
+      );
+    }
+
+    // --- Main Integrated App Shell ---
+    function App() {
+      const [activeTab, setActiveTab] = useState('courses');
+      const [selectedCourse, setSelectedCourse] = useState(COURSES_DATA[0]);
+      const [selected3D, setSelected3D] = useState('gpcr');
+      
+      // CrCl Calculator States
+      const [cgAge, setCgAge] = useState(62);
+      const [cgWeight, setCgWeight] = useState(72);
+      const [cgScr, setCgScr] = useState(1.4);
+      const [cgGender, setCgGender] = useState('male');
+      
+      // Medication Adherence Today State
+      const [medsTaken, setMedsTaken] = useState({
+        med1_morn: true,
+        med1_eve: false,
+        med2_morn: true,
+        med3_morn: false
+      });
+
+      // Cockcroft-Gault calculation
+      const calculatedCrCl = Math.round(
+        ((140 - cgAge) * cgWeight) / (72 * (cgScr || 1)) * (cgGender === 'female' ? 0.85 : 1.0)
+      );
+
+      // Chat Messages State
+      const [chatMessages, setChatMessages] = useState([
+        { sender: 'pharmacist', name: 'Pharm. Dawid Aliyi, BCPS', text: 'Greetings! I am on duty. How may I assist you with clinical dosing, drug interactions, or guidelines today?' }
+      ]);
+      const [chatInput, setChatInput] = useState('');
+
+      const handleSendChat = () => {
+        if (!chatInput.trim()) return;
+        const userText = chatInput.trim();
+        setChatMessages(prev => [...prev, { sender: 'user', name: 'You', text: userText }]);
+        setChatInput('');
+
+        setTimeout(() => {
+          let reply = `Thank you for your clinical inquiry. Our team has cross-referenced national EFDA protocols. Please confirm patient renal biomarkers (CrCl: ${calculatedCrCl} mL/min) and verify allergy status before dispensing.`;
+          setChatMessages(prev => [...prev, { sender: 'pharmacist', name: 'Pharm. Dawid Aliyi, BCPS', text: reply }]);
+        }, 800);
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+          {/* Top Bar: CBE Account & Developer Dawid Aliyi */}
+          <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-indigo-950 border-b border-teal-500/30 px-4 py-2 text-xs">
+            <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                  Lead Developer: Pharmacist Dawid Aliyi
+                </span>
+                <span className="text-slate-300">
+                  Free Account: <strong className="text-white">Pharmastar</strong> | Password: <span className="font-mono text-teal-300">••••••••••••••</span>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-slate-300">
+                <span>Bank: Commercial Bank of Ethiopia <strong className="text-white font-mono">1000262900367 (Dawid Aliyi)</strong></span>
+                <span className="text-slate-600">•</span>
+                <span className="text-teal-300 font-bold">100 Birr / $1.00 USD</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Bar */}
+          <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-800">
+            <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg">
+                  ✦
+                </div>
+                <div>
+                  <h1 className="text-lg font-black text-white">Pharmastar app pro</h1>
+                  <p className="text-[11px] text-teal-400">Complete Standalone Clinical Pharmacy Suite</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/40 text-xs font-bold">
+                  Single-File Complete Edition
+                </span>
+              </div>
+            </div>
+
+            {/* Desktop Tabs */}
+            <div className="border-t border-slate-800 bg-slate-900/60 overflow-x-auto">
+              <div className="max-w-7xl mx-auto px-4 flex items-center gap-1 py-1.5 text-xs font-bold">
+                {[
+                  { id: 'courses', label: '10 Courses & Reading' },
+                  { id: 'moa3d', label: '3D MOA Visualizer' },
+                  { id: 'checker', label: 'Drug Interactions' },
+                  { id: 'lab', label: 'Lab & CrCl Calculator' },
+                  { id: 'tracker', label: 'Medication Tracker' },
+                  { id: 'chat', label: 'Pharmacist Live Chat' },
+                  { id: 'guidelines', label: 'Clinical Guidelines' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-3 py-1.5 rounded-xl transition whitespace-nowrap cursor-pointer ${
+                      activeTab === tab.id ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          {/* Main Body */}
+          <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+            
+            {/* 1. COURSES TAB */}
+            {activeTab === 'courses' && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 h-[600px] overflow-y-auto space-y-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-teal-400 mb-2">10 Pharmacy Courses</h3>
+                  {COURSES_DATA.map(course => (
+                    <div
+                      key={course.id}
+                      onClick={() => setSelectedCourse(course)}
+                      className={`p-3 rounded-xl border cursor-pointer transition ${
+                        selectedCourse.id === course.id
+                          ? 'bg-teal-950/40 border-teal-500 text-white'
+                          : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold">{course.title}</span>
+                        <span className="text-[10px] text-teal-400 font-mono">{course.code}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 line-clamp-1 mt-1">{course.description}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs text-teal-400 font-mono font-bold">{selectedCourse.code} • {selectedCourse.duration}</span>
+                      <h2 className="text-xl font-bold text-white mt-0.5">{selectedCourse.title}</h2>
+                    </div>
+                    {selectedCourse.has3D && (
+                      <button
+                        onClick={() => {
+                          setSelected3D(selectedCourse.moaId || 'gpcr');
+                          setActiveTab('moa3d');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/30 transition"
+                      >
+                        Launch 3D MOA ➔
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-slate-300 leading-relaxed">{selectedCourse.description}</p>
+
+                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                    <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wide">
+                      {selectedCourse.modules[0]?.title}
+                    </h4>
+                    <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-line">
+                      {selectedCourse.modules[0]?.content}
+                    </p>
+                  </div>
+
+                  <div className="bg-teal-950/20 border border-teal-500/30 p-4 rounded-xl space-y-2">
+                    <span className="text-xs font-bold text-teal-400 uppercase tracking-wide">
+                      High-Yield Clinical Pearls for Hospital Rounds:
+                    </span>
+                    <ul className="space-y-1.5 text-xs text-slate-200">
+                      {selectedCourse.modules[0]?.pearls.map((pearl, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-teal-400 font-bold">•</span>
+                          <span>{pearl}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 2. 3D MOA TAB */}
+            {activeTab === 'moa3d' && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                  <div>
+                    <h3 className="text-base font-bold text-white">3D Molecular Mechanism of Action Visualizer</h3>
+                    <p className="text-xs text-slate-400">Three.js WebGL GPU molecular kinematics</p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {[
+                      { id: 'gpcr', label: 'GPCR & Beta-Blocker' },
+                      { id: 'acei', label: 'ACE Inhibitor & Zinc' },
+                      { id: 'ache', label: 'Liposomal Nanocarrier' }
+                    ].map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => setSelected3D(m.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                          selected3D === m.id ? 'bg-teal-600 text-white' : 'bg-slate-800 text-slate-300'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <MechanismVisualizer3D modelType={selected3D} />
+              </div>
+            )}
+
+            {/* 3. DRUG INTERACTION CHECKER */}
+            {activeTab === 'checker' && (
+              <div className="space-y-4">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                  <h3 className="text-base font-bold text-white">Polypharmacy Drug Interaction Checker</h3>
+                  <p className="text-xs text-slate-400 mt-1">Cross-examines regimens for pharmacokinetic and hemorrhagic risks.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {DRUG_INTERACTIONS.map((item, idx) => (
+                    <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-teal-300">{item.drugA} + {item.drugB}</span>
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                          {item.severity}
+                        </span>
+                      </div>
+                      <div className="text-xs space-y-1">
+                        <p><strong className="text-slate-400">Mechanism:</strong> <span className="text-slate-300">{item.mechanism}</span></p>
+                        <p><strong className="text-rose-400">Clinical Risk:</strong> <span className="text-slate-300">{item.effect}</span></p>
+                      </div>
+                      <div className="bg-teal-950/20 p-2.5 rounded-xl border border-teal-500/30 text-xs text-emerald-300">
+                        <strong>Action:</strong> {item.action}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 4. LAB & COCKCROFT-GAULT CALCULATOR */}
+            {activeTab === 'lab' && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                  <h3 className="text-base font-bold text-white">Cockcroft-Gault CrCl Calculator</h3>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="text-slate-400 block mb-1">Age (Years):</label>
+                      <input
+                        type="number"
+                        value={cgAge}
+                        onChange={(e) => setCgAge(Number(e.target.value))}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-slate-400 block mb-1">Weight (kg):</label>
+                      <input
+                        type="number"
+                        value={cgWeight}
+                        onChange={(e) => setCgWeight(Number(e.target.value))}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-slate-400 block mb-1">Serum Creatinine (mg/dL):</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={cgScr}
+                        onChange={(e) => setCgScr(Number(e.target.value))}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-slate-400 block mb-1">Gender:</label>
+                      <select
+                        value={cgGender}
+                        onChange={(e) => setCgGender(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white"
+                      >
+                        <option value="male">Male</option>
+                        <option value="female">Female (0.85x)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-950 rounded-xl border border-teal-500/40 flex justify-between items-center">
+                    <div>
+                      <span className="text-xs text-slate-400">Calculated Creatinine Clearance:</span>
+                      <div className="text-2xl font-bold font-mono text-teal-400">{calculatedCrCl} mL/min</div>
+                    </div>
+                    <div className="text-xs font-bold text-right">
+                      {calculatedCrCl >= 60 ? (
+                        <span className="text-emerald-400">Normal / Mild Impairment</span>
+                      ) : calculatedCrCl >= 30 ? (
+                        <span className="text-amber-400">Moderate Impairment (Dose Adjust!)</span>
+                      ) : (
+                        <span className="text-rose-400">Severe Renal Impairment</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                  <h3 className="text-base font-bold text-white">Core Laboratory Diagnostic Profiles</h3>
+                  <div className="space-y-2.5">
+                    {LAB_TESTS.map((test, i) => (
+                      <div key={i} className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
+                        <div className="flex justify-between">
+                          <strong className="text-white">{test.name}</strong>
+                          <span className="text-teal-400 font-mono">{test.normal}</span>
+                        </div>
+                        <p className="text-slate-400">{test.elevated}</p>
+                        <p className="text-teal-300"><strong>Action:</strong> {test.action}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 5. MEDICATION TRACKER */}
+            {activeTab === 'tracker' && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-base font-bold text-white">Daily Medication Adherence Schedule</h3>
+                    <p className="text-xs text-slate-400">Tap checkboxes to log doses taken today.</p>
+                  </div>
+                  <div className="bg-slate-950 px-4 py-2 rounded-xl border border-teal-500/40 text-center">
+                    <span className="text-[10px] text-slate-400 block">Adherence</span>
+                    <span className="text-lg font-bold font-mono text-teal-400">75%</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
+                    <h4 className="font-bold text-white">Lisinopril 20 mg</h4>
+                    <p className="text-teal-400 font-mono">1 Tab • Morning</p>
+                    <label className="flex items-center gap-2 pt-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={medsTaken.med1_morn}
+                        onChange={(e) => setMedsTaken({ ...medsTaken, med1_morn: e.target.checked })}
+                      />
+                      <span>Morning Dose Taken</span>
+                    </label>
+                  </div>
+
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
+                    <h4 className="font-bold text-white">Carvedilol 12.5 mg</h4>
+                    <p className="text-teal-400 font-mono">1 Tab • Twice Daily</p>
+                    <label className="flex items-center gap-2 pt-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={medsTaken.med2_morn}
+                        onChange={(e) => setMedsTaken({ ...medsTaken, med2_morn: e.target.checked })}
+                      />
+                      <span>Morning Dose Taken</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={medsTaken.med1_eve}
+                        onChange={(e) => setMedsTaken({ ...medsTaken, med1_eve: e.target.checked })}
+                      />
+                      <span>Evening Dose Taken</span>
+                    </label>
+                  </div>
+
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
+                    <h4 className="font-bold text-white">Empagliflozin 10 mg</h4>
+                    <p className="text-teal-400 font-mono">1 Tab • Morning</p>
+                    <label className="flex items-center gap-2 pt-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={medsTaken.med3_morn}
+                        onChange={(e) => setMedsTaken({ ...medsTaken, med3_morn: e.target.checked })}
+                      />
+                      <span>Morning Dose Taken</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 6. LIVE PHARMACIST CHAT */}
+            {activeTab === 'chat' && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 h-[550px] flex flex-col">
+                <div>
+                  <h3 className="text-base font-bold text-white">Clinical Pharmacist On-Duty Live Consultation</h3>
+                  <p className="text-xs text-slate-400">Lead Specialist: Pharm. Dawid Aliyi, BCPS</p>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs">
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                      <span className="text-[10px] text-slate-400 mb-0.5">{msg.name}</span>
+                      <div className={`p-3 rounded-2xl max-w-[80%] ${
+                        msg.sender === 'user' ? 'bg-teal-600 text-white' : 'bg-slate-800 text-slate-200 border border-slate-700'
+                      }`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                    placeholder="Ask clinical pharmacist about dosing, interactions, or guidelines..."
+                    className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-teal-500"
+                  />
+                  <button
+                    onClick={handleSendChat}
+                    className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 7. GUIDELINES */}
+            {activeTab === 'guidelines' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {GUIDELINES.map((guide, idx) => (
+                  <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2 text-xs">
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      {guide.category}
+                    </span>
+                    <h4 className="text-sm font-bold text-white mt-1">{guide.title}</h4>
+                    <p className="text-teal-400">{guide.authority}</p>
+                    <p className="text-slate-300 leading-relaxed mt-2">{guide.summary}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </main>
+
+          {/* Footer */}
+          <footer className="mt-auto bg-slate-950 border-t border-slate-800 py-6 px-4 text-center text-xs text-slate-400 space-y-1">
+            <p className="font-bold text-slate-200">
+              Pharmastar app pro © {new Date().getFullYear()} — Lead Developer: Pharmacist Dawid Aliyi
+            </p>
+            <p className="text-[11px] text-slate-500">
+              Commercial Bank of Ethiopia: 1000262900367 (Dawid Aliyi) • Registration: 100 Birr / $1.00 USD
+            </p>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

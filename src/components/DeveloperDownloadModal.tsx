@@ -81,24 +81,81 @@ export const DeveloperDownloadModal: React.FC<DeveloperDownloadModalProps> = ({
         ], null, 2));
       }
 
-      // 4. Personalized Readme for Dawid Aliyi
-      zip.file('README-DAWID-ALIYI.md', `# Pharmastar App Pro — Complete Offline & Deployment Package
+      // 4. GitHub Actions Workflows & F-Droid Config
+      const githubFolder = zip.folder('.github/workflows');
+      if (githubFolder) {
+        githubFolder.file('ci.yml', `name: CI & Build Verification
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with: { node-version: 20 }
+    - run: npm ci
+    - run: npm run lint
+    - run: npm run build
+`);
+        githubFolder.file('pages.yml', `name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [ main ]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    environment: { name: github-pages, url: "\${{ steps.deployment.outputs.page_url }}" }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: './dist' }
+      - uses: actions/deploy-pages@v4
+        id: deployment
+`);
+      }
+
+      // 5. F-Droid metadata
+      zip.file('.fdroid.yml', `Categories:
+  - Science & Education
+  - Healthcare
+License: Apache-2.0
+WebSite: https://ais-pre-mh4jmp6i4ovuyf4sqf523i-955023450528.europe-west2.run.app
+SourceCode: https://github.com/jaalibiddoo-spec/Pharma-Star-app-pro
+Summary: "Clinical pharmacy, 3D molecular mechanics, and drug science suite"
+RepoType: git
+Repo: https://github.com/jaalibiddoo-spec/Pharma-Star-app-pro.git
+`);
+
+      // 6. Personalized Readme for Dawid Aliyi
+      zip.file('README-DAWID-ALIYI.md', `# Pharmastar App Pro — Complete Offline, GitHub & F-Droid Package
 Developer: Pharmacist Dawid Aliyi
 Email: jaalibiddoo@gmail.com
 Bank: Commercial Bank of Ethiopia 1000262900367 (Dawid Aliyi)
 Registration: 100 Birr / $1.00 USD
 Live App URL: https://ais-pre-mh4jmp6i4ovuyf4sqf523i-955023450528.europe-west2.run.app
 
-### Package Contents:
-1. manifest.json: Verified Web App Manifest for PWABuilder / Play Store
-2. offline-database/:
-   - 10-pharmacy-courses.json (Pharmacology, Pharmacotherapy, Toxicology, Industrial Pharmacy, Pharmacy Practice, Biopharmaceuticals, Medicinal Chemistry, Physical Pharmaceutics, Pharmacognosy, Internship Practice)
-   - drug-interactions-matrix.json (Pairwise severity & CYP450 checks)
-   - clinical-guidelines-efda-who.json (Ethiopian EFDA, MoH STG, WHO AWaRe, ADA, AHA/ACC)
-   - laboratory-dosing-tests.json (Cockcroft-Gault & reference ranges)
-3. android-playstore-config/:
-   - bubblewrap-twa-config.json
-   - assetlinks.json
+### Quick Git Push to GitHub:
+\`\`\`bash
+git init
+git add .
+git commit -m "Initial commit of Pharmastar App Pro by Pharmacist Dawid Aliyi"
+git branch -M main
+git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/pharmastar-app-pro.git
+git push -u origin main
+\`\`\`
+
+### F-Droid Repository Submission:
+1. Submit MR to https://gitlab.com/fdroid/fdroiddata
+2. Add metadata/com.pharmastar.app.pro.yml with .fdroid.yml configuration
 `);
 
       // Generate the zip blob

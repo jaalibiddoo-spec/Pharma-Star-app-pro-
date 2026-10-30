@@ -1,0 +1,44 @@
+# F-Droid App Metadata Configuration
+# Package: com.pharmastar.app.pro
+# Application Name: Pharmastar app pro
+# Author: Pharmacist Dawid Aliyi <jaalibiddoo@gmail.com>
+# License: Apache-2.0
+# Categories: Medical, Education, Science
+
+Categories:
+  - Science & Education
+  - Healthcare
+License: Apache-2.0
+WebSite: https://ais-pre-mh4jmp6i4ovuyf4sqf523i-955023450528.europe-west2.run.app
+SourceCode: https://github.com/jaalibiddoo-spec/Pharma-Star-app-pro
+IssueTracker: https://github.com/jaalibiddoo-spec/Pharma-Star-app-pro/issues
+
+Summary: "Clinical pharmacy, 3D molecular mechanics, and drug science suite"
+Description: |
+  Pharmastar App Pro is a comprehensive pharmaceutical and clinical practice suite
+  developed by Pharmacist Dawid Aliyi.
+
+  Features:
+  * 10 Core Academic Pharmacy Courses with clinical pearls and syllabi
+  * MoH / EFDA Accredited CPD Credit Courses & Assessment Quizzes
+  * Real-time 3D Interactive WebGL Molecular Mechanisms of Action (MOA)
+  * Polypharmacy Drug Interaction Matrix with CYP450 metabolism profiles
+  * Laboratory Result Interpretation & Cockcroft-Gault CrCl Calculator
+  * Electronic Patient Records (EPR) and SOAP Clinical Documentation
+  * Diurnal Medication Adherence Tracker
+  * Ethiopian EFDA, MoH STG, WHO AWaRe, ADA, AHA/ACC Guidelines
+  * 6 Languages: English, Amharic, Afaan Oromoo, French, Arabic, Spanish
+  * Offline-first storage architecture for remote and rural clinics
+
+RepoType: git
+Repo: https://github.com/jaalibiddoo-spec/Pharma-Star-app-pro.git
+
+Builds:
+  - versionName: '1.0.0'
+    versionCode: 100
+    commit: 'v1.0.0'
+    subdir: .
+    init:
+      - npm ci
+    build:
+      - npm run build

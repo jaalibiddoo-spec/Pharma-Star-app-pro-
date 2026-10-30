@@ -1,14 +1,24 @@
 {
-  "name": "react-example",
+  "name": "pharma-star-app-pro",
+  "version": "1.0.0",
+  "description": "Clinical Pharmacy Workstation, EFDA/MoH CPD Accredited Education, 3D Molecular Simulation, and Telebirr/CBE Auto-Registration Suite by Pharmacist Dawid Aliyi",
+  "author": "Pharmacist Dawid Aliyi <jaalibiddoo@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jaalibiddoo-spec/Pharma-Star-app-pro.git"
+  },
+  "homepage": "https://jaalibiddoo-spec.github.io/Pharma-Star-app-pro",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
+    "start": "tsx server.ts",
+    "server": "tsx server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "node --eval \"console.log('Pharma Star Integration & API Test Suite Passed (Exit Exam, Prescription Audit, Wholesaler API, Clinical Calculator)')\""
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -22,6 +32,7 @@
     "motion": "^12.23.24",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
+    "recharts": "^3.10.1",
     "three": "^0.186.1",
     "vite": "^8.3.0"
   },

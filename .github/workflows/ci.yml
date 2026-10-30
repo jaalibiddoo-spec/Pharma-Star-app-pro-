@@ -1,0 +1,38 @@
+name: CI & Quality Gate
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout AI-Generated Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Project Dependencies
+        run: npm ci
+
+      - name: Run Security Vulnerability Scan
+        run: npm audit --audit-level=high || echo "Vulnerability scan completed with warnings"
+        # Checks for package security without stopping the CI pipeline unnecessarily
+
+      - name: Execute Code Linting & Syntax Checks
+        run: npm run lint
+        # Ensures clean TypeScript standards and no broken syntax
+
+      - name: Run Integration & API Tests
+        run: npm test
+        # Runs test suite to verify Google AI Studio integrations, audit engine, and portal routing work
+
+      - name: Build Web Application
+        run: npm run build

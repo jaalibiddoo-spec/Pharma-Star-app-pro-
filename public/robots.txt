@@ -1,0 +1,11 @@
+# robots.txt for Pharma Star App Pro
+# Developer: Pharmacist Dawid Aliyi <jaalibiddoo@gmail.com>
+# Official Repository: https://github.com/jaalibiddoo-spec/Pharma-Star-app-pro
+# Official GitHub Pages: https://jaalibiddoo-spec.github.io/Pharma-Star-app-pro/
+
+User-agent: *
+Allow: /
+
+# Sitemap indexing
+Sitemap: https://jaalibiddoo-spec.github.io/Pharma-Star-app-pro/sitemap.xml
+Sitemap: https://ais-pre-mh4jmp6i4ovuyf4sqf523i-955023450528.europe-west2.run.app/sitemap.xml

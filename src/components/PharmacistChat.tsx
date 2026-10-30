@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatMessage } from '../types';
+import confetti from 'canvas-confetti';
+import { ChatMessage, ConsultationBooking, PaymentMethodType } from '../types';
 import { 
   Send, User, ShieldCheck, AlertTriangle, Paperclip, 
-  Sparkles, Stethoscope, Clock, CheckCircle2, RefreshCw 
+  Sparkles, Stethoscope, Clock, CheckCircle2, RefreshCw, 
+  Calendar, CreditCard, Landmark, Smartphone, Zap, Building2, 
+  Wallet, Globe, Copy, Check, X, Phone, MessageSquare 
 } from 'lucide-react';
 
 interface PharmacistChatProps {
@@ -23,7 +26,7 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
       id: "msg-2",
       sender: "pharmacist",
       senderName: "Pharm. Dawid Aliyi, BCPS (Lead Clinical Pharmacist)",
-      text: "Greetings! I am on duty. How may I assist you with clinical dosing, drug interactions, renal adjustments, or prescription review today?",
+      text: "Greetings! I am on duty. How may I assist you with clinical dosing, drug interactions, renal adjustments, or prescription review today? You can also book a dedicated 1-on-1 Medication Therapy Management (MTM) consultation session.",
       timestamp: "Just now",
       isClinicalCard: true,
       clinicalData: {
@@ -38,6 +41,20 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
   const [selectedCategory, setSelectedCategory] = useState("Drug Interaction Review");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 1-on-1 Consultation Booking Modal State
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [contactInfo, setContactInfo] = useState("");
+  const [consultationType, setConsultationType] = useState<ConsultationBooking['consultationType']>('mtm_review');
+  const [preferredDate, setPreferredDate] = useState(new Date().toISOString().split('T')[0]);
+  const [preferredTime, setPreferredTime] = useState("Morning (9:00 AM - 12:00 PM)");
+  const [clinicalNotes, setClinicalNotes] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('cbe');
+  const [paymentRef, setPaymentRef] = useState("");
+  const [bookedConsultation, setBookedConsultation] = useState<ConsultationBooking | null>(null);
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -63,6 +80,12 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
     "How to adjust Levofloxacin for a patient with CrCl 28 mL/min?"
   ];
 
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2500);
+  };
+
   const handleSendMessage = (textToSend?: string) => {
     const text = textToSend || inputVal;
     if (!text.trim()) return;
@@ -80,7 +103,6 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
     if (!textToSend) setInputVal("");
     setIsTyping(true);
 
-    // Simulate smart clinical pharmacist response with contextual understanding
     setTimeout(() => {
       let replyText = "";
       let cardData: any = undefined;
@@ -98,37 +120,37 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
         replyText = "For acute otitis media, the recommended high-dose regimen is 80 to 90 mg/kg/day divided into 2 doses (every 12 hours) to overcome intermediate Streptococcus pneumoniae resistance.";
         cardData = {
           drugName: "Amoxicillin Pediatric Dose (12 kg child)",
-          recommendation: "Total Daily Dose: 90 mg/kg * 12 kg = 1,080 mg/day (Approx. 1,000 mg/day divided BID = 500 mg every 12 hours).",
-          doseAdvice: "Using 250 mg/5 mL suspension: Administer 10 mL (500 mg) orally every 12 hours with meals for 10 days."
+          recommendation: "Calculate: 12 kg * 90 mg/kg/day = 1080 mg/day -> 540 mg PO every 12 hours for 10 days.",
+          doseAdvice: "Using 250 mg/5 mL suspension: 11 mL PO BID. Using 400 mg/5 mL: 6.75 mL PO BID with food."
         };
       } else if (lower.includes("warfarin") && lower.includes("ibuprofen")) {
-        replyText = "Strictly avoid concurrent Ibuprofen with Warfarin. Ibuprofen inhibits platelet COX-1 and causes gastric mucosal injury, drastically multiplying bleeding risk.";
+        replyText = "Contraindicated without gastroprotection! Combining Warfarin with Ibuprofen dramatically increases gastrointestinal bleeding risk by 3 to 6-fold via dual platelet inhibition and mucosal injury.";
         cardData = {
-          drugName: "Warfarin + NSAID Interaction Warning",
-          warning: "Major Hemorrhagic & Upper GI Bleeding Risk",
-          recommendation: "Substitute Acetaminophen (Paracetamol) 500 mg - 1000 mg TID PRN (maximum 2g/day while on warfarin) or topical capsaicin cream.",
-          doseAdvice: "If NSAID is ever essential, co-prescribe Pantoprazole 40 mg daily and check INR within 3-5 days."
+          drugName: "Warfarin + Ibuprofen (NSAID)",
+          warning: "Major Hemorrhagic Hazard",
+          recommendation: "Avoid oral NSAIDs. Recommend Acetaminophen (Paracetamol) up to 2 g/day maximum for osteoarthritic pain, or topical NSAID gel (Diclofenac 1%).",
+          doseAdvice: "If Paracetamol is taken chronically (>2g/day for >3 days), monitor INR closely as it may mildly inhibit CYP2C9."
         };
-      } else if (lower.includes("levofloxacin") && lower.includes("crcl")) {
-        replyText = "Levofloxacin is eliminated predominantly by the kidneys (87%). Renal dose reduction is essential when CrCl < 50 mL/min to prevent neurotoxicity, seizures, and tendon rupture.";
+      } else if (lower.includes("levofloxacin") && (lower.includes("crcl") || lower.includes("renal"))) {
+        replyText = "Renal dose titration required! Levofloxacin is eliminated ~80% unchanged via glomerular filtration and tubular secretion.";
         cardData = {
           drugName: "Levofloxacin Renal Adjustment (CrCl 28 mL/min)",
-          recommendation: "Standard 500 mg dose adjusted to: Initial loading dose 500 mg, followed by 250 mg every 24 hours.",
-          doseAdvice: "Standard 750 mg dose adjusted to: 750 mg once every 48 hours. Ensure hydration and monitor QT interval."
+          recommendation: "For standard 500 mg q24h indication: Give initial loading dose of 500 mg, then reduce maintenance to 250 mg every 24 hours.",
+          doseAdvice: "For severe CAP (750 mg q24h standard): Give 750 mg loading, then 750 mg every 48 hours. Maintain adequate hydration to prevent crystalluria."
         };
       } else {
-        replyText = `Thank you for consulting on "${selectedCategory}". Our clinical pharmacy team has reviewed your query: "${text}". Please ensure to cross-reference patient kidney biomarkers (CrCl/eGFR), hepatic panel, and documented drug allergies.`;
+        replyText = `Thank you for your clinical inquiry regarding ${selectedCategory}. I have reviewed your submission against Ethiopian STG 5th edition and WHO therapeutic standards.`;
         cardData = {
-          drugName: selectedCategory,
-          recommendation: "Clinical evaluation indicates verifying therapeutic serum levels, auditing concurrent CYP450 inhibitors/inducers, and confirming adherence.",
-          doseAdvice: "Follow Ethiopian STG and WHO Essential Medicine Formulary guidance for standard maintenance regimens."
+          drugName: "Clinical Case Assessment",
+          recommendation: "Verify baseline renal panel (eGFR/Scr), hepatic enzymes, and concurrent prescription list before adjusting regimen.",
+          doseAdvice: "For complex polypharmacy audits or inpatient ward reviews, consider booking a dedicated 1-on-1 MTM session."
         };
       }
 
-      const pharmMsg: ChatMessage = {
+      const pharmacistMsg: ChatMessage = {
         id: `pharm-${Date.now()}`,
         sender: "pharmacist",
-        senderName: "Pharm. Dawid Aliyi, BCPS (Clinical Specialist)",
+        senderName: "Pharm. Dawid Aliyi, BCPS (Lead Clinical Pharmacist)",
         text: replyText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         category: selectedCategory,
@@ -136,15 +158,62 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
         clinicalData: cardData
       };
 
-      setMessages(prev => [...prev, pharmMsg]);
+      setMessages(prev => [...prev, pharmacistMsg]);
       setIsTyping(false);
     }, 1200);
   };
 
+  const handleBookConsultation = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingBooking(true);
+
+    const ref = paymentRef || `CBE-MTM-${Date.now().toString().slice(-6)}`;
+    const newBooking: ConsultationBooking = {
+      id: `mtm-${Date.now()}`,
+      clientName: clientName || "Healthcare Colleague",
+      contactEmailOrPhone: contactInfo || "0911234567",
+      consultationType,
+      preferredDate,
+      preferredTimeSlot: preferredTime,
+      patientClinicalSummary: clinicalNotes || "Comprehensive patient medication review requested.",
+      feeETB: 250,
+      feeUSD: 5.0,
+      paymentMethod: selectedMethod,
+      paymentReference: ref,
+      status: 'confirmed',
+      consultantName: "Pharmacist Dawid Aliyi, BCPS",
+      meetingLinkOrLocation: "Live Tele-Pharmacy / Hospital Clinical Ward Review"
+    };
+
+    setTimeout(() => {
+      setIsSubmittingBooking(false);
+      setBookedConsultation(newBooking);
+      try {
+        confetti({
+          particleCount: 120,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch (e) {}
+
+      // Add system message to chat
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `sys-booked-${Date.now()}`,
+          sender: "system",
+          senderName: "System",
+          text: `1-on-1 Clinical MTM Consultation scheduled with Pharmacist Dawid Aliyi for ${preferredDate} (${preferredTime}). Appointment Ref: ${ref}`,
+          timestamp: "Just now"
+        }
+      ]);
+    }, 1200);
+  };
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col h-[650px]">
-      {/* Consultation Header */}
-      <div className="px-5 py-3.5 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[650px] shadow-xl relative">
+      {/* Chat Header */}
+      <div className="p-4 bg-gradient-to-r from-teal-950 via-slate-900 to-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-10 h-10 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 font-bold text-sm">
@@ -159,13 +228,23 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
                 <ShieldCheck className="w-3 h-3" /> Certified BCPS On-Duty
               </span>
             </div>
-            <p className="text-xs text-slate-400">Direct access to clinical pharmacotherapy and dosing guidance</p>
+            <p className="text-xs text-slate-400">Pharm. Dawid Aliyi • Clinical Pharmacotherapy & Dosing</p>
           </div>
         </div>
 
-        {/* Category Selector */}
+        {/* Action Controls */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 font-medium hidden sm:inline">Triage:</span>
+          <button
+            onClick={() => {
+              setBookedConsultation(null);
+              setIsBookingModalOpen(true);
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-teal-600 hover:from-amber-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition cursor-pointer"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Book 1-on-1 MTM Consultation (250 ETB)</span>
+          </button>
+
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -194,7 +273,7 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
             }`}
           >
             {m.sender === 'system' ? (
-              <div className="text-[11px] text-slate-400 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
+              <div className="text-[11px] text-slate-300 bg-slate-900/90 px-3 py-1 rounded-full border border-teal-500/30 shadow">
                 {m.text}
               </div>
             ) : (
@@ -270,11 +349,11 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
       {/* Message Input Box */}
       <div className="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
         <button
-          onClick={() => alert("Prescription scanning & image attachment simulator: You can attach patient prescriptions, hospital discharge summaries, or lab charts for direct pharmacist review.")}
-          className="p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition cursor-pointer"
-          title="Attach Prescription or Lab Document"
+          onClick={() => setIsBookingModalOpen(true)}
+          className="p-2 rounded-xl text-teal-400 hover:text-teal-300 hover:bg-slate-900 transition cursor-pointer"
+          title="Book 1-on-1 Consultation"
         >
-          <Paperclip className="w-4 h-4" />
+          <Calendar className="w-4 h-4" />
         </button>
 
         <input
@@ -295,6 +374,242 @@ export const PharmacistChat: React.FC<PharmacistChatProps> = ({ isPro, onUpgrade
           <Send className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      {/* Booking Modal */}
+      {isBookingModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+            <div className="px-6 py-4 bg-gradient-to-r from-teal-900 via-slate-900 to-indigo-950 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                  Direct Clinical Appointment
+                </span>
+                <h3 className="text-base font-bold text-white mt-1">
+                  Book 1-on-1 Medication Therapy Management (MTM)
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsBookingModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 text-xs">
+              {!bookedConsultation ? (
+                <form onSubmit={handleBookConsultation} className="space-y-4">
+                  {/* Lead Consultant Bio */}
+                  <div className="bg-slate-950 p-3.5 rounded-xl border border-teal-500/30 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-300 font-bold">
+                      DA
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Lead Consultant: Pharmacist Dawid Aliyi, BCPS</h4>
+                      <p className="text-[11px] text-slate-300">Board Certified Pharmacotherapy Specialist • 250 ETB ($5 USD)</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Your Full Name:</label>
+                    <input
+                      type="text"
+                      required
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      placeholder="e.g. Dr. Almaz / Patient Tadesse"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Phone Number (or Telegram / WhatsApp):</label>
+                    <input
+                      type="text"
+                      required
+                      value={contactInfo}
+                      onChange={(e) => setContactInfo(e.target.value)}
+                      placeholder="e.g. +251 92 047 9133 or @username"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Consultation Service Type:</label>
+                    <select
+                      value={consultationType}
+                      onChange={(e) => setConsultationType(e.target.value as any)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs cursor-pointer"
+                    >
+                      <option value="mtm_review">Comprehensive Medication Therapy Management (MTM)</option>
+                      <option value="renal_hepatic_dosing">Renal / Hepatic Impairment Dose Optimization</option>
+                      <option value="oncology_antimicrobial">Antimicrobial Stewardship & Culture De-escalation</option>
+                      <option value="polypharmacy_deprescribing">Geriatric Polypharmacy & De-prescribing</option>
+                      <option value="academic_mentorship">Junior Pharmacist & Clerkship Clinical Mentorship</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-slate-300 font-semibold block mb-1">Preferred Date:</label>
+                      <input
+                        type="date"
+                        required
+                        value={preferredDate}
+                        onChange={(e) => setPreferredDate(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-slate-300 font-semibold block mb-1">Time Window:</label>
+                      <select
+                        value={preferredTime}
+                        onChange={(e) => setPreferredTime(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs"
+                      >
+                        <option>Morning (9:00 AM - 12:00 PM)</option>
+                        <option>Afternoon (2:00 PM - 5:00 PM)</option>
+                        <option>Evening (6:00 PM - 9:00 PM)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Clinical Case Brief / Questions:</label>
+                    <textarea
+                      rows={2}
+                      value={clinicalNotes}
+                      onChange={(e) => setClinicalNotes(e.target.value)}
+                      placeholder="Mention current drugs, diagnosis, creatinine/LFTs..."
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-teal-500 text-xs"
+                    />
+                  </div>
+
+                  {/* Payment Method Selector (All Allowed) */}
+                  <div className="space-y-2 pt-1 border-t border-slate-800">
+                    <span className="font-bold text-slate-300 text-[11px] block uppercase">
+                      Select Payment Method (Fee: 250 ETB / $5 USD):
+                    </span>
+
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod('cbe')}
+                        className={`p-2 rounded-lg border text-center text-xs cursor-pointer ${
+                          selectedMethod === 'cbe' ? 'bg-purple-950/60 border-purple-500 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'
+                        }`}
+                      >
+                        CBE Account
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod('telebirr')}
+                        className={`p-2 rounded-lg border text-center text-xs cursor-pointer ${
+                          selectedMethod === 'telebirr' ? 'bg-amber-950/60 border-amber-500 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'
+                        }`}
+                      >
+                        Telebirr
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMethod('cbe_birr')}
+                        className={`p-2 rounded-lg border text-center text-xs cursor-pointer ${
+                          selectedMethod === 'cbe_birr' ? 'bg-emerald-950/60 border-emerald-500 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'
+                        }`}
+                      >
+                        CBE Birr
+                      </button>
+                    </div>
+
+                    <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                      <span className="font-mono text-teal-300 text-xs">
+                        {selectedMethod === 'cbe' && "CBE: 1000262900367 (Dawid Aliyi)"}
+                        {selectedMethod === 'telebirr' && "Telebirr: 0982852778 (Dawid Aliyi)"}
+                        {selectedMethod === 'cbe_birr' && "CBE Birr *847# -> 1000262900367"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedMethod === 'cbe' ? "1000262900367" : "0982852778", 'booking-ref')}
+                        className="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded"
+                      >
+                        {copiedKey === 'booking-ref' ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="text-slate-400 block mb-0.5 text-[11px]">Transaction / SMS Reference:</label>
+                      <input
+                        type="text"
+                        value={paymentRef}
+                        onChange={(e) => setPaymentRef(e.target.value)}
+                        placeholder="e.g. FT262900367XYZ or TB-98214"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center gap-2">
+                    <button
+                      type="submit"
+                      disabled={isSubmittingBooking}
+                      className="flex-1 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
+                    >
+                      {isSubmittingBooking ? (
+                        <span>Confirming Appointment...</span>
+                      ) : (
+                        <>
+                          <Calendar className="w-4 h-4" />
+                          <span>Book & Confirm Clinical Session</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* Booking Success Ticket */
+                <div className="space-y-4 text-center py-4">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Consultation Booked Successfully!</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Pharmacist Dawid Aliyi has received your clinical consultation request.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-left space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Appointment Code:</span>
+                      <span className="font-mono font-bold text-teal-300">{bookedConsultation.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Consultant:</span>
+                      <strong className="text-white">{bookedConsultation.consultantName}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Date & Window:</span>
+                      <span className="text-white">{bookedConsultation.preferredDate} ({bookedConsultation.preferredTimeSlot})</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Direct Contact:</span>
+                      <span className="text-emerald-400 font-mono">jaalibiddoo@gmail.com</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsBookingModalOpen(false)}
+                    className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs cursor-pointer"
+                  >
+                    Return to Live Chat
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

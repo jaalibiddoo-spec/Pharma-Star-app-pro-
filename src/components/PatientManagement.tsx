@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { initialPatientsData } from '../data/patientsData';
 import { Patient } from '../types';
+import { PatientOverview } from './PatientOverview';
 import { 
   Users, UserCheck, AlertTriangle, FileText, Plus, 
   Search, ShieldAlert, Heart, Activity, Pill, CheckCircle2 
@@ -16,6 +17,7 @@ export const PatientManagement: React.FC<PatientManagementProps> = ({ onCheckInt
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddingPatient, setIsAddingPatient] = useState(false);
   const [isAddingSoap, setIsAddingSoap] = useState(false);
+  const [patientViewMode, setPatientViewMode] = useState<'overview' | 'soap_records'>('overview');
 
   // New patient state
   const [newPatientName, setNewPatientName] = useState("");
@@ -191,11 +193,49 @@ export const PatientManagement: React.FC<PatientManagementProps> = ({ onCheckInt
         </div>
 
         {/* Right: Active Patient File */}
-        <div className="lg:col-span-8 space-y-5">
+        <div className="lg:col-span-8 space-y-4">
           {activePatient && (
-            <div className="space-y-4">
-              {/* Demographics Card */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+            <>
+              {/* Patient Sub-Navigation Tabs */}
+              <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-2 rounded-2xl">
+                <button
+                  onClick={() => setPatientViewMode('overview')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer ${
+                    patientViewMode === 'overview'
+                      ? 'bg-teal-600 text-white shadow-lg'
+                      : 'bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800'
+                  }`}
+                >
+                  <Activity className="w-3.5 h-3.5 text-teal-300" />
+                  <span>Patient Overview & Health Dashboard</span>
+                </button>
+
+                <button
+                  onClick={() => setPatientViewMode('soap_records')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer ${
+                    patientViewMode === 'soap_records'
+                      ? 'bg-teal-600 text-white shadow-lg'
+                      : 'bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Clinical SOAP Notes & Records ({activePatient.soapNotes.length})</span>
+                </button>
+              </div>
+
+              {patientViewMode === 'overview' ? (
+                <PatientOverview
+                  patient={activePatient}
+                  onAuditRegimen={onCheckInteractions}
+                  onWriteSoapNote={() => {
+                    setPatientViewMode('soap_records');
+                    setIsAddingSoap(true);
+                  }}
+                />
+              ) : (
+                <div className="space-y-4">
+                  {/* Demographics Card */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <span className="text-[11px] font-mono text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
@@ -384,8 +424,10 @@ export const PatientManagement: React.FC<PatientManagementProps> = ({ onCheckInt
               </div>
             </div>
           )}
-        </div>
-      </div>
+        </>
+      )}
+    </div>
+  </div>
 
       {/* Register New Patient Modal */}
       {isAddingPatient && (
