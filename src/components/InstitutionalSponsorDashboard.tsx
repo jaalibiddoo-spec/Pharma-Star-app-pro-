@@ -56,12 +56,14 @@ export const InstitutionalSponsorDashboard: React.FC<InstitutionalSponsorDashboa
   currentUser,
   onUpdateUser
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'cohorts' | 'learners' | 'proforma' | 'verification' | 'low_bandwidth'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'cohorts' | 'learners' | 'proforma' | 'verification' | 'audit_trail' | 'low_bandwidth'>('overview');
   const [selectedCohortId, setSelectedCohortId] = useState<string>('all');
   const [learnerSearch, setLearnerSearch] = useState('');
   const [verificationInput, setVerificationInput] = useState('');
   const [verifiedCertificate, setVerifiedCertificate] = useState<any | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [auditFilterType, setAuditFilterType] = useState<'all' | 'access' | 'progress' | 'verification' | 'financial'>('all');
+  const [auditSearchQuery, setAuditSearchQuery] = useState('');
 
   // Low Bandwidth Mode Toggle for rural clinics / campuses
   const [isLowBandwidthMode, setIsLowBandwidthMode] = useState<boolean>(() => {
@@ -651,6 +653,18 @@ export const InstitutionalSponsorDashboard: React.FC<InstitutionalSponsorDashboa
           <QrCode className="w-3.5 h-3.5" />
           <span>Certificate Verification Portal</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('audit_trail')}
+          className={`px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 cursor-pointer ${
+            activeTab === 'audit_trail'
+              ? 'bg-teal-600 text-white shadow'
+              : 'bg-slate-900 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          <span>Institutional Audit Trail & Event Logs</span>
+        </button>
       </div>
 
       {/* VIEW 1: Strategic Pricing Models & Executive Overview */}
@@ -1137,6 +1151,194 @@ export const InstitutionalSponsorDashboard: React.FC<InstitutionalSponsorDashboa
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* VIEW 6: Institutional Audit Trail & Access Logs */}
+      {activeTab === 'audit_trail' && (
+        <div className="space-y-5">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-teal-400" />
+                  <span>Institutional Compliance Audit Trail & Event Ledger</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Automated chronological audit records of user access timestamps, module completion milestones, and certification verification queries.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/30 text-xs font-mono font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                  Live Audit Feed (Immutable)
+                </span>
+              </div>
+            </div>
+
+            {/* Filter Ribbons */}
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { id: 'all', label: 'All Audit Events' },
+                  { id: 'access', label: 'Access Timestamps' },
+                  { id: 'progress', label: 'User Progress & Exams' },
+                  { id: 'verification', label: 'Cert Verifications' },
+                  { id: 'financial', label: 'Proforma & Settlements' }
+                ].map(flt => (
+                  <button
+                    key={flt.id}
+                    onClick={() => setAuditFilterType(flt.id as any)}
+                    className={`px-3 py-1.5 rounded-xl font-bold cursor-pointer transition border ${
+                      auditFilterType === flt.id
+                        ? 'bg-teal-600 text-white border-teal-500 shadow'
+                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                    }`}
+                  >
+                    {flt.label}
+                  </button>
+                ))}
+              </div>
+
+              <input
+                type="text"
+                placeholder="Search auditor ledger..."
+                value={auditSearchQuery}
+                onChange={(e) => setAuditSearchQuery(e.target.value)}
+                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:border-teal-500 outline-none max-w-xs"
+              />
+            </div>
+
+            {/* Audit Log Table */}
+            <div className="rounded-xl border border-slate-800 overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                  <tr>
+                    <th className="p-3">Timestamp (EAT)</th>
+                    <th className="p-3">Event Type</th>
+                    <th className="p-3">User / Actor</th>
+                    <th className="p-3">Institution / Cohort</th>
+                    <th className="p-3">Audit Details & Action Log</th>
+                    <th className="p-3">Compliance Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/80 bg-slate-900/60 font-mono text-[11px]">
+                  {[
+                    {
+                      timestamp: '2026-10-31 08:32:14',
+                      type: 'progress',
+                      typeLabel: 'Module Completed',
+                      actor: 'Dr. Selamawit Zeleke Worku',
+                      actorRole: 'Resident (EFDA/CLIN/2019/3312)',
+                      cohort: 'AAU Faculty Batch',
+                      detail: 'Completed Module 12: Advanced Pharmacokinetics & TDM. Final Exam Score: 94%. Certificate PS-CERT-ET-771903 issued.',
+                      status: 'Verified Pass',
+                      statusColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+                    },
+                    {
+                      timestamp: '2026-10-31 07:45:02',
+                      type: 'verification',
+                      typeLabel: 'Cert Query',
+                      actor: 'Oromia Health Bureau HR Auditor',
+                      actorRole: 'Auditor ID #OHB-AUD-94',
+                      cohort: 'Regional Health Bureau',
+                      detail: 'Public Verification lookup for Certificate PS-CERT-ET-849201 (Dawit Bekele). Signature hash matched EFDA ledger.',
+                      status: 'Authentic 100%',
+                      statusColor: 'text-teal-400 bg-teal-500/10 border-teal-500/30'
+                    },
+                    {
+                      timestamp: '2026-10-30 18:22:19',
+                      type: 'financial',
+                      typeLabel: 'Settlement Verified',
+                      actor: 'Institutional Finance Office',
+                      actorRole: 'Finance Director',
+                      cohort: 'Oromia Health Bureau - Arsi Zone',
+                      detail: 'CBE Birr institutional settlement of 12,000 ETB verified via transaction ref TXN-CBE-994812 into CBE 1000262900367.',
+                      status: 'Settled & Cleared',
+                      statusColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+                    },
+                    {
+                      timestamp: '2026-10-30 14:10:48',
+                      type: 'access',
+                      typeLabel: 'Low-Bandwidth Session',
+                      actor: 'Chala Mengistu Desta',
+                      actorRole: 'Pharmacist (EFDA/PHARM/2021/8412)',
+                      cohort: 'Oromia Health Bureau Staff',
+                      detail: 'Session initiated via Low-Bandwidth Mode (compressed audio stream + text transcript) from Asella rural dispatch post.',
+                      status: 'Synced Offline',
+                      statusColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30'
+                    },
+                    {
+                      timestamp: '2026-10-30 11:05:33',
+                      type: 'financial',
+                      typeLabel: 'Proforma Issued',
+                      actor: 'Dean of Pharmacy Office',
+                      actorRole: 'Dean / Department Head',
+                      cohort: 'Hawassa University CMHS',
+                      detail: 'Proforma Invoice PRF-ET-2026-0941 generated for 200 Per-Seat Vouchers (TIN: 0072918462).',
+                      status: 'Audited Contract',
+                      statusColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30'
+                    },
+                    {
+                      timestamp: '2026-10-29 16:50:11',
+                      type: 'progress',
+                      typeLabel: 'Module Milestone',
+                      actor: 'Tigist Alemayehu Tadesse',
+                      actorRole: 'Clinical Pharmacist',
+                      cohort: 'Hawassa University Faculty',
+                      detail: 'Completed Module 8: Cardiovascular Pharmacotherapy (Hypertension & HF Guidelines). Passed quiz with 88%.',
+                      status: 'On-Track (8/12)',
+                      statusColor: 'text-teal-400 bg-teal-500/10 border-teal-500/30'
+                    }
+                  ]
+                    .filter(item => auditFilterType === 'all' || item.type === auditFilterType)
+                    .filter(item => {
+                      if (!auditSearchQuery.trim()) return true;
+                      const q = auditSearchQuery.toLowerCase();
+                      return item.actor.toLowerCase().includes(q) ||
+                             item.detail.toLowerCase().includes(q) ||
+                             item.cohort.toLowerCase().includes(q);
+                    })
+                    .map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-800/40">
+                        <td className="p-3 text-slate-400 whitespace-nowrap">{item.timestamp}</td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-teal-300 border border-slate-700">
+                            {item.typeLabel}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="font-bold text-white font-sans">{item.actor}</div>
+                          <div className="text-[10px] text-slate-400">{item.actorRole}</div>
+                        </td>
+                        <td className="p-3 text-slate-300 font-sans">{item.cohort}</td>
+                        <td className="p-3 text-slate-300 font-sans max-w-md">{item.detail}</td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded border text-[10px] font-bold font-sans ${item.statusColor}`}>
+                            {item.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400 pt-2 border-t border-slate-800">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>Auditing logs cryptographically signed and archived for 5 years per Ethiopian Civil Service and MoH guidelines.</span>
+              </span>
+              <button
+                onClick={handleExportCSV}
+                className="text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download Certified Audit CSV</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

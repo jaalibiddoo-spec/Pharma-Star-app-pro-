@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { cpdModulesData } from '../data/cpdModulesData';
+import { get20QuestionsForModule } from '../data/cpdExpandedQuestions';
 import { CPDModule, CPDQuizQuestion, IssuedCPDCertificate, PaymentMethodType } from '../types';
 import { 
   Award, CheckCircle2, XCircle, ShieldCheck, Landmark, Smartphone, 
   CreditCard, Zap, Printer, Download, QrCode, FileText, ChevronRight, 
-  RotateCcw, Sparkles, AlertCircle, Building2, Wallet, Globe, Check, Copy, X
+  RotateCcw, Sparkles, AlertCircle, Building2, Wallet, Globe, Check, Copy, X,
+  ChevronLeft, Eye
 } from 'lucide-react';
 
 interface CPDModuleHubProps {
@@ -16,13 +18,14 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
   const [activeTab, setActiveTab] = useState<'modules' | 'wallet'>('modules');
   const [selectedModule, setSelectedModule] = useState<CPDModule | null>(null);
   
-  // Quiz State
+  // Quiz State (20 Questions - Answers NOT revealed during examination)
   const [isQuizActive, setIsQuizActive] = useState(false);
+  const [examQuestions, setExamQuestions] = useState<CPDQuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
-  const [showExplanation, setShowExplanation] = useState(false);
   const [quizFinished, setQuizFinished] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [showDetailedReview, setShowDetailedReview] = useState(false);
 
   // Certificate Issuance Modal & Payment State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -65,49 +68,56 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
-  // Start Quiz
+  // Start 20-Question Exam
   const handleStartQuiz = (mod: CPDModule) => {
     setSelectedModule(mod);
+    const q20 = get20QuestionsForModule(mod);
+    setExamQuestions(q20);
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
-    setShowExplanation(false);
     setQuizFinished(false);
     setQuizScore(0);
+    setShowDetailedReview(false);
     setIsQuizActive(true);
   };
 
+  // Select Option - strictly does NOT show answer while examinee is being tested
   const handleSelectOption = (optionIndex: number) => {
-    if (showExplanation) return;
     setSelectedAnswers(prev => ({ ...prev, [currentQuestionIndex]: optionIndex }));
-    setShowExplanation(true);
   };
 
   const handleNextQuestion = () => {
-    if (!selectedModule) return;
-    setShowExplanation(false);
-    if (currentQuestionIndex < selectedModule.questions.length - 1) {
+    if (currentQuestionIndex < examQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
-    } else {
-      // Calculate score
-      let correct = 0;
-      selectedModule.questions.forEach((q, idx) => {
-        if (selectedAnswers[idx] === q.correctAnswerIndex) {
-          correct++;
-        }
-      });
-      const scorePercent = Math.round((correct / selectedModule.questions.length) * 100);
-      setQuizScore(scorePercent);
-      setQuizFinished(true);
+    }
+  };
 
-      if (scorePercent >= selectedModule.passingScorePercent) {
-        try {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        } catch (e) {}
+  const handlePrevQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const handleSubmitExam = () => {
+    if (!selectedModule || examQuestions.length === 0) return;
+    let correct = 0;
+    examQuestions.forEach((q, idx) => {
+      if (selectedAnswers[idx] === q.correctAnswerIndex) {
+        correct++;
       }
+    });
+    const scorePercent = Math.round((correct / examQuestions.length) * 100);
+    setQuizScore(scorePercent);
+    setQuizFinished(true);
+
+    if (scorePercent >= selectedModule.passingScorePercent) {
+      try {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch (e) {}
     }
   };
 
@@ -413,154 +423,268 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
             <div className="p-6 overflow-y-auto space-y-5">
               {!quizFinished ? (
                 <>
-                  {/* Progress Indicator */}
-                  <div className="space-y-1.5">
+                  {/* Progress Header & Question Navigator Strip */}
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between text-xs text-slate-400">
-                      <span>Question {currentQuestionIndex + 1} of {selectedModule.questions.length}</span>
-                      <span className="text-teal-400 font-semibold">{selectedModule.ceuCredits} CEU Accredited</span>
+                      <span>Question <strong>{currentQuestionIndex + 1}</strong> of <strong>{examQuestions.length}</strong></span>
+                      <span className="text-teal-400 font-semibold">{Object.keys(selectedAnswers).length} of {examQuestions.length} Answered</span>
                     </div>
+
                     <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
                       <div 
                         className="bg-teal-500 h-full transition-all duration-300"
-                        style={{ width: `${((currentQuestionIndex + 1) / selectedModule.questions.length) * 100}%` }}
+                        style={{ width: `${((currentQuestionIndex + 1) / examQuestions.length) * 100}%` }}
                       />
+                    </div>
+
+                    {/* Question Navigator Jump Grid (1 to 20) */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {examQuestions.map((_, qIdx) => {
+                        const isCurrent = qIdx === currentQuestionIndex;
+                        const isAnswered = selectedAnswers[qIdx] !== undefined;
+
+                        return (
+                          <button
+                            key={qIdx}
+                            type="button"
+                            onClick={() => setCurrentQuestionIndex(qIdx)}
+                            className={`w-7 h-7 rounded-lg text-[11px] font-bold transition flex items-center justify-center cursor-pointer border ${
+                              isCurrent
+                                ? 'bg-teal-600 text-white border-teal-400 ring-2 ring-teal-400/30'
+                                : isAnswered
+                                ? 'bg-teal-950/60 text-teal-300 border-teal-500/50'
+                                : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-white'
+                            }`}
+                            title={`Jump to Question ${qIdx + 1} ${isAnswered ? '(Answered)' : '(Unanswered)'}`}
+                          >
+                            {qIdx + 1}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Question Card */}
+                  {/* Question Card - Strict Examination Mode (Answers HIDDEN) */}
                   {(() => {
-                    const q = selectedModule.questions[currentQuestionIndex];
+                    const q = examQuestions[currentQuestionIndex];
+                    if (!q) return null;
                     const selectedOpt = selectedAnswers[currentQuestionIndex];
 
                     return (
-                      <div className="space-y-4">
+                      <div className="space-y-4 pt-2">
                         {q.scenario && (
                           <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 text-xs text-amber-300/90 leading-relaxed">
-                            <span className="font-bold text-amber-400 block mb-0.5">Clinical Scenario:</span>
+                            <span className="font-bold text-amber-400 block mb-0.5">Clinical Case Scenario:</span>
                             {q.scenario}
                           </div>
                         )}
 
                         <h4 className="text-sm font-bold text-white leading-relaxed">
+                          <span className="text-teal-400 mr-1.5 font-mono">Q{currentQuestionIndex + 1}.</span>
                           {q.question}
                         </h4>
 
-                        {/* Options */}
+                        {/* Options: Selected option is marked, but NO answers or green/red revealed during exam */}
                         <div className="space-y-2.5">
                           {q.options.map((opt, optIdx) => {
-                            let btnStyle = "bg-slate-950 border-slate-800 text-slate-200 hover:border-teal-500/60";
-
-                            if (showExplanation) {
-                              if (optIdx === q.correctAnswerIndex) {
-                                btnStyle = "bg-emerald-950/70 border-emerald-500 text-emerald-200 font-bold";
-                              } else if (selectedOpt === optIdx) {
-                                btnStyle = "bg-rose-950/70 border-rose-500 text-rose-200";
-                              } else {
-                                btnStyle = "bg-slate-950/40 border-slate-800 text-slate-500 opacity-60";
-                              }
-                            } else if (selectedOpt === optIdx) {
-                              btnStyle = "bg-teal-950/60 border-teal-500 text-white font-semibold";
-                            }
+                            const isSelected = selectedOpt === optIdx;
 
                             return (
                               <button
                                 key={optIdx}
-                                disabled={showExplanation}
+                                type="button"
                                 onClick={() => handleSelectOption(optIdx)}
-                                className={`w-full p-3.5 rounded-xl border text-xs text-left transition flex items-start gap-3 cursor-pointer ${btnStyle}`}
+                                className={`w-full p-3.5 rounded-xl border text-xs text-left transition flex items-start gap-3 cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-teal-950/70 border-teal-400 text-white font-bold ring-1 ring-teal-400/50 shadow-md'
+                                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                                }`}
                               >
-                                <span className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shrink-0 flex items-center justify-center font-bold text-[11px]">
+                                <span className={`w-6 h-6 rounded-full border shrink-0 flex items-center justify-center font-bold text-[11px] ${
+                                  isSelected 
+                                    ? 'bg-teal-600 border-teal-400 text-white' 
+                                    : 'bg-slate-900 border-slate-700 text-slate-400'
+                                }`}>
                                   {String.fromCharCode(65 + optIdx)}
                                 </span>
-                                <span className="leading-relaxed">{opt}</span>
+                                <span className="leading-relaxed pt-0.5">{opt}</span>
                               </button>
                             );
                           })}
                         </div>
 
-                        {/* Clinical Explanation */}
-                        {showExplanation && (
-                          <div className="p-4 bg-slate-950 rounded-xl border border-teal-500/40 text-xs space-y-2 animate-in fade-in duration-200">
-                            <div className="flex items-center gap-1.5 font-bold text-teal-400">
-                              <Sparkles className="w-4 h-4 text-teal-400" />
-                              <span>Clinical Rationale & Evidence:</span>
-                            </div>
-                            <p className="text-slate-300 leading-relaxed text-[11px]">
-                              {q.explanation}
-                            </p>
-                            <span className="text-[10px] text-slate-400 block pt-1 border-t border-slate-800 font-mono">
-                              Reference: {q.guidelineReference}
-                            </span>
-                          </div>
-                        )}
+                        <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[11px] text-slate-400 flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                          <span>Examination in progress. Correct answers & detailed rationales will be revealed upon final submission.</span>
+                        </div>
                       </div>
                     );
                   })()}
 
-                  {/* Actions */}
-                  <div className="pt-3 border-t border-slate-800 flex justify-end">
-                    {showExplanation && (
+                  {/* Navigation Actions */}
+                  <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      disabled={currentQuestionIndex === 0}
+                      onClick={handlePrevQuestion}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      <span>Previous</span>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      {currentQuestionIndex < examQuestions.length - 1 ? (
+                        <button
+                          type="button"
+                          onClick={handleNextQuestion}
+                          className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer border border-slate-700"
+                        >
+                          <span>Next Question</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      ) : null}
+
                       <button
-                        onClick={handleNextQuestion}
-                        className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition cursor-pointer"
+                        type="button"
+                        onClick={handleSubmitExam}
+                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg transition cursor-pointer"
                       >
-                        <span>{currentQuestionIndex < selectedModule.questions.length - 1 ? "Next Question" : "Submit Exam & View Results"}</span>
-                        <ChevronRight className="w-4 h-4" />
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Submit Final Exam ({Object.keys(selectedAnswers).length}/{examQuestions.length})</span>
                       </button>
-                    )}
+                    </div>
                   </div>
                 </>
               ) : (
-                /* Quiz Finished Result Screen */
-                <div className="text-center py-6 space-y-5">
-                  <div className="inline-block p-4 rounded-full bg-teal-500/10 border border-teal-500/30">
-                    {quizScore >= selectedModule.passingScorePercent ? (
-                      <Award className="w-16 h-16 text-amber-400 mx-auto" />
-                    ) : (
-                      <RotateCcw className="w-16 h-16 text-rose-400 mx-auto" />
-                    )}
-                  </div>
+                /* Quiz Finished Result Screen with Full 20-Question Review Key */
+                <div className="py-4 space-y-6">
+                  <div className="text-center space-y-3">
+                    <div className="inline-block p-4 rounded-full bg-teal-500/10 border border-teal-500/30">
+                      {quizScore >= selectedModule.passingScorePercent ? (
+                        <Award className="w-16 h-16 text-amber-400 mx-auto" />
+                      ) : (
+                        <RotateCcw className="w-16 h-16 text-rose-400 mx-auto" />
+                      )}
+                    </div>
 
-                  <div>
-                    <h3 className="text-2xl font-black text-white">
-                      {quizScore >= selectedModule.passingScorePercent ? "Congratulations! Exam Passed" : "Passing Threshold Not Met"}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Passing Requirement: <strong>{selectedModule.passingScorePercent}%</strong>
-                    </p>
-                  </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-white">
+                        {quizScore >= selectedModule.passingScorePercent ? "Congratulations! Exam Passed" : "Passing Threshold Not Met"}
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Passing Requirement: <strong>{selectedModule.passingScorePercent}%</strong> (Required by Ethiopian EFDA / MoH)
+                      </p>
+                    </div>
 
-                  <div className="max-w-xs mx-auto p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-                    <span className="text-xs text-slate-400 block">Your Score:</span>
-                    <span className={`text-4xl font-extrabold ${quizScore >= selectedModule.passingScorePercent ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {quizScore}%
-                    </span>
-                    <span className="text-xs text-slate-300 block">
-                      {quizScore >= selectedModule.passingScorePercent 
-                        ? `Eligible for ${selectedModule.ceuCredits} EFDA CPD Credit Points` 
-                        : "Review course pearls and retake the exam."}
-                    </span>
-                  </div>
+                    <div className="max-w-xs mx-auto p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+                      <span className="text-xs text-slate-400 block">Your Score:</span>
+                      <span className={`text-4xl font-extrabold ${quizScore >= selectedModule.passingScorePercent ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {quizScore}%
+                      </span>
+                      <span className="text-xs text-slate-300 block">
+                        {quizScore >= selectedModule.passingScorePercent 
+                          ? `Eligible for ${selectedModule.ceuCredits} EFDA CPD Credit Points` 
+                          : "Review clinical explanations below and retake the exam."}
+                      </span>
+                    </div>
 
-                  <div className="flex items-center justify-center gap-3 pt-2">
-                    <button
-                      onClick={() => handleStartQuiz(selectedModule)}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      <span>Retake Exam</span>
-                    </button>
-
-                    {quizScore >= selectedModule.passingScorePercent && (
+                    <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                       <button
-                        onClick={handleProceedToCheckout}
-                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-xl transition cursor-pointer"
+                        onClick={() => handleStartQuiz(selectedModule)}
+                        className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                       >
-                        <Award className="w-4 h-4" />
-                        <span>Issue Official Certificate ({selectedModule.standardFeeETB} ETB)</span>
+                        <RotateCcw className="w-4 h-4" />
+                        <span>Retake Exam</span>
                       </button>
-                    )}
+
+                      {quizScore >= selectedModule.passingScorePercent && (
+                        <button
+                          onClick={handleProceedToCheckout}
+                          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-xl transition cursor-pointer"
+                        >
+                          <Award className="w-4 h-4" />
+                          <span>Issue Official Certificate ({selectedModule.standardFeeETB} ETB)</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => setShowDetailedReview(!showDetailedReview)}
+                        className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer border border-slate-700"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>{showDetailedReview ? 'Hide Exam Review' : 'View Full 20 Questions Review & Explanations'}</span>
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Post-Exam Detailed 20 Questions Review (Revealed ONLY after submission) */}
+                  {showDetailedReview && (
+                    <div className="space-y-4 pt-4 border-t border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-teal-400" />
+                          <span>Complete 20-Question Answer Key & Clinical Explanations</span>
+                        </h4>
+                        <span className="text-xs text-slate-400 font-mono">20 Questions Reviewed</span>
+                      </div>
+
+                      <div className="space-y-3">
+                        {examQuestions.map((q, idx) => {
+                          const userAns = selectedAnswers[idx];
+                          const isCorrect = userAns === q.correctAnswerIndex;
+
+                          return (
+                            <div key={idx} className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-white">
+                                  Q{idx + 1}. {q.question}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  isCorrect 
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                }`}>
+                                  {isCorrect ? 'Correct ✓' : userAns !== undefined ? 'Incorrect ✗' : 'Unanswered ✗'}
+                                </span>
+                              </div>
+
+                              <div className="space-y-1">
+                                {q.options.map((opt, oIdx) => {
+                                  const isUserChoice = userAns === oIdx;
+                                  const isCorrectChoice = q.correctAnswerIndex === oIdx;
+
+                                  let optClass = "text-slate-400";
+                                  if (isCorrectChoice) {
+                                    optClass = "text-emerald-300 font-bold bg-emerald-950/40 border border-emerald-500/40 p-2 rounded-lg";
+                                  } else if (isUserChoice && !isCorrect) {
+                                    optClass = "text-rose-300 font-semibold bg-rose-950/40 border border-rose-500/40 p-2 rounded-lg";
+                                  }
+
+                                  return (
+                                    <div key={oIdx} className={`text-[11px] flex items-center gap-2 ${optClass}`}>
+                                      <span className="font-bold">{String.fromCharCode(65 + oIdx)}.</span>
+                                      <span>{opt}</span>
+                                      {isCorrectChoice && <span className="text-[10px] text-emerald-400 font-bold ml-auto">(Verified Answer)</span>}
+                                      {isUserChoice && !isCorrect && <span className="text-[10px] text-rose-400 font-bold ml-auto">(Your Choice)</span>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              <div className="p-3 rounded-lg bg-slate-900 border border-teal-500/30 text-[11px] text-slate-300 space-y-1">
+                                <strong className="text-teal-300 block">Clinical Rationale:</strong>
+                                <p>{q.explanation}</p>
+                                <span className="text-[10px] text-slate-400 block pt-1 border-t border-slate-800 font-mono">
+                                  Standard Reference: {q.guidelineReference}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

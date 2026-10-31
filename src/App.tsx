@@ -42,6 +42,13 @@ import { UserPaymentHistoryModal } from './components/UserPaymentHistoryModal';
 import { AutoRecommendationModal } from './components/AutoRecommendationModal';
 import { InstitutionalSponsorDashboard } from './components/InstitutionalSponsorDashboard';
 import { AdminInstitutionalAnalytics } from './components/AdminInstitutionalAnalytics';
+import { TelemedicineAndTelepharmacy } from './components/TelemedicineAndTelepharmacy';
+import { RadiologyInterpretationPortal } from './components/RadiologyInterpretationPortal';
+import { DermatologyAndCompoundingSuite } from './components/DermatologyAndCompoundingSuite';
+import { DrugTherapyProblemIdentifier } from './components/DrugTherapyProblemIdentifier';
+import { NationalTrainingManualsHub } from './components/NationalTrainingManualsHub';
+import { PharmacyLibraryBookshelf } from './components/PharmacyLibraryBookshelf';
+import { MedicalAdvancementsAndDrugDirectory } from './components/MedicalAdvancementsAndDrugDirectory';
 import { getStoredUser, saveUserAndPayment } from './utils/userStorage';
 import { PaymentRecord } from './types';
 
@@ -53,20 +60,20 @@ import {
   Award, Building2, BookMarked, ExternalLink, Layout, Package,
   FileCheck2, Scan, Headphones, Truck, Presentation, Tv, Flame,
   Radio, HelpCircle, Calculator, Store, Receipt, GitBranch, Github,
-  Share2, GraduationCap, BarChart3
+  Share2, GraduationCap, BarChart3, AlertTriangle, FileScan
 } from 'lucide-react';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<'website' | 'app'>('website');
   const [currentLang, setCurrentLang] = useState<Language>('en');
   const [activeTab, setActiveTab] = useState<
-    'courses' | 'prescription_review' | 'research_publishing' | 'store_monitor' | 'cpd_modules' | 'wiki' | 
+    'courses' | 'pharmacy_library' | 'medical_advancements' | 'prescription_review' | 'research_publishing' | 'store_monitor' | 'cpd_modules' | 'wiki' | 
     'moa3d' | 'drug_checker' | 'lab_interpreter' | 
     'patient_history' | 'med_tracker' | 'live_chat' | 'guidelines' |
     'sponsorships' | 'anti_counterfeit' | 'audio_pearls' | 'epss_logistics' |
     'gemini_voice' | 'pharmatube' | 'doc_to_ppt' | 'developer_feedback' | 'outbreak_cpd' |
     'internet_packages' | 'clinical_calc' | 'exit_exam' | 'wholesaler_portal' | 'institutional_sponsor' |
-    'admin_analytics'
+    'admin_analytics' | 'telemedicine' | 'radiology_portal' | 'dermatology_suite' | 'dtp_identifier' | 'national_manuals'
   >('courses');
 
   // User Authentication State with localStorage cross-platform persistence and auto-remember
@@ -186,8 +193,15 @@ export default function App() {
 
   const navItems = [
     { id: 'courses', label: t.courses, icon: BookOpen },
+    { id: 'pharmacy_library', label: 'Pharmacy Library & Readable Bookshelf', icon: BookMarked },
+    { id: 'medical_advancements', label: 'Universal Drug Compendium & Advancements (DIS)', icon: Pill },
+    { id: 'dtp_identifier', label: 'Drug Therapy Problem (DTP) Identifier', icon: AlertTriangle },
+    { id: 'clinical_calc', label: 'Clinical Calculator & Medical Scores (TIMI/Child-Pugh/Padua)', icon: Calculator },
+    { id: 'national_manuals', label: 'National Training Manuals (STG/GDP/AMS)', icon: BookOpen },
+    { id: 'dermatology_suite', label: 'Dermatology & BP Compounding Suite', icon: Sparkles },
+    { id: 'telemedicine', label: 'Telemedicine & Telepharmacy Room (Chapa)', icon: Video },
+    { id: 'radiology_portal', label: 'Radiology Interpretation (Scans/PDF - Chapa)', icon: FileScan },
     { id: 'exit_exam', label: 'Exit Exam & NGAT (50 Birr)', icon: GraduationCap },
-    { id: 'clinical_calc', label: 'Clinical Calculator (CrCl/BMI)', icon: Calculator },
     { id: 'wholesaler_portal', label: 'Wholesaler Portal (500 Birr/3mo)', icon: Store },
     { id: 'institutional_sponsor', label: 'Institutional Sponsor Dashboard', icon: Building2 },
     { id: 'admin_analytics', label: 'Admin Demographics & Analytics', icon: BarChart3 },
@@ -686,6 +700,52 @@ export default function App() {
               setCurrentUser(saved);
             }}
           />
+        )}
+
+        {/* Tab: Telemedicine and Telepharmacy Suite */}
+        {activeTab === 'telemedicine' && (
+          <TelemedicineAndTelepharmacy
+            currentUser={currentUser}
+            onUpdateUser={setCurrentUser}
+            onOpenConsultationChat={() => setActiveTab('live_chat')}
+          />
+        )}
+
+        {/* Tab: Multimodal Radiology & Imaging Interpretation Portal */}
+        {activeTab === 'radiology_portal' && (
+          <RadiologyInterpretationPortal
+            currentUser={currentUser}
+            onUpdateUser={setCurrentUser}
+          />
+        )}
+
+        {/* Tab: Dermatology Consultation, BP Compounding & Rx Provider */}
+        {activeTab === 'dermatology_suite' && (
+          <DermatologyAndCompoundingSuite
+            currentUser={currentUser}
+            onUpdateUser={setCurrentUser}
+            onOpenConsultationChat={() => setActiveTab('live_chat')}
+          />
+        )}
+
+        {/* Tab: Drug Therapy Problem (DTP) Identifier */}
+        {activeTab === 'dtp_identifier' && (
+          <DrugTherapyProblemIdentifier />
+        )}
+
+        {/* Tab: Ethiopian National Training Manuals & STG Repository */}
+        {activeTab === 'national_manuals' && (
+          <NationalTrainingManualsHub />
+        )}
+
+        {/* Tab: Pharmacy Library & Readable Bookshelf */}
+        {activeTab === 'pharmacy_library' && (
+          <PharmacyLibraryBookshelf />
+        )}
+
+        {/* Tab: Universal Drug Compendium, Advancements & Drug Information Services */}
+        {activeTab === 'medical_advancements' && (
+          <MedicalAdvancementsAndDrugDirectory />
         )}
       </main>
 

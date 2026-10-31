@@ -7,7 +7,7 @@ import {
   Building2, BookMarked, ExternalLink, ArrowRight, Star, 
   HelpCircle, Copy, Check, HeartHandshake, PhoneCall, Mail,
   Layers, Cpu, Play, Search, GraduationCap, ShieldAlert, Zap,
-  FileCheck2
+  FileCheck2, FileScan, AlertTriangle, Calculator
 } from 'lucide-react';
 import { coursesData } from '../data/coursesData';
 import { Language, User } from '../types';
@@ -272,6 +272,190 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
             <div className="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl text-center backdrop-blur-sm">
               <div className="text-2xl md:text-3xl font-black text-amber-400">100 ETB</div>
               <div className="text-xs text-slate-400 font-semibold mt-1">Lifetime Pro Access (or $1.00 USD)</div>
+            </div>
+          </div>
+
+          {/* Quick-Access Specialized Clinical Suites */}
+          <div className="mt-14 max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Newly Integrated Clinical & Diagnostic Hubs</span>
+                </span>
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-0.5">Specialized Telemedicine, Imaging, DTP & Dermatology</h3>
+              </div>
+              <span className="hidden sm:inline text-xs text-slate-400 font-medium">Negotiable fees via Chapa & CBE</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-left">
+              {/* Card 1: DTP Identifier */}
+              <div 
+                onClick={() => onLaunchApp('dtp_identifier')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-teal-500/10 text-teal-300 px-2 py-0.5 rounded font-mono">Cipolle 7-Category</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-teal-300 transition">Drug Therapy Problem (DTP) Identifier</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Screen inpatient and outpatient regimens for Indication, Effectiveness, Safety, and Adherence issues with automated SOAP workup generator.
+                </p>
+                <div className="text-[11px] text-teal-400 font-semibold flex items-center gap-1 pt-1">
+                  <span>Audit Patient Regimen</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Card 2: Clinical Scores */}
+              <div 
+                onClick={() => onLaunchApp('clinical_calc')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 flex items-center justify-center font-bold">
+                    <Calculator className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded font-mono">TIMI / Child-Pugh / Padua</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-teal-300 transition">Medical Diagnostic Scores & Calculators</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Calculate TIMI Risk (UA/NSTEMI & STEMI), Child-Pugh cirrhosis grading, Padua VTE risk, CURB-65 pneumonia, and CHA2DS2-VASc stroke score.
+                </p>
+                <div className="text-[11px] text-indigo-300 font-semibold flex items-center gap-1 pt-1">
+                  <span>Calculate Risk Score</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Card 3: Dermatology & Compounding */}
+              <div 
+                onClick={() => onLaunchApp('dermatology_suite')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded font-mono">British Pharmacopoeia (BP)</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-teal-300 transition">Dermatology & BP Compounding Suite</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Skin lesion scanner with senior dermatologist oversight, official BP master compounding sheets (Whitfield's, Coal Tar), and Rx provider.
+                </p>
+                <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1 pt-1">
+                  <span>Interpret Lesions & Compound</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Card 4: Telemedicine & Telepharmacy */}
+              <div 
+                onClick={() => onLaunchApp('telemedicine')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold">
+                    <Video className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded font-mono">Chapa Negotiable</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-teal-300 transition">Telemedicine & Telepharmacy Room</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Live encrypted audio/video consultation with clinical pharmacists and doctors, digital e-prescribing, MTM, and flexible fee settlement.
+                </p>
+                <div className="text-[11px] text-cyan-400 font-semibold flex items-center gap-1 pt-1">
+                  <span>Start Virtual Session</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Card 5: Radiology Interpretation */}
+              <div 
+                onClick={() => onLaunchApp('radiology_portal')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-violet-500/20 text-violet-300 flex items-center justify-center font-bold">
+                    <FileScan className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-violet-500/10 text-violet-300 px-2 py-0.5 rounded font-mono">Scans & PDF</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-teal-300 transition">Radiology Interpretation Portal</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Interactive multi-modality radiology DICOM/PDF reader with contrast/zoom windowing, student teaching cases, and remote patient triage.
+                </p>
+                <div className="text-[11px] text-violet-400 font-semibold flex items-center gap-1 pt-1">
+                  <span>Analyze Scan or PDF</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Card 6: National Training Manuals */}
+              <div 
+                onClick={() => onLaunchApp('national_manuals')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded font-mono">EFDA & MoH Official</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-teal-300 transition">National Training Manuals Hub</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Official repository of Ethiopian STG 5th Edition, Good Dispensing Practice (GDP), AMS stewardship, TB/Leprosy, IPLS, and IMNCI.
+                </p>
+                <div className="text-[11px] text-amber-400 font-semibold flex items-center gap-1 pt-1">
+                  <span>Browse National STGs</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Card 7: Pharmacy Library & Readable Bookshelf */}
+              <div 
+                onClick={() => onLaunchApp('pharmacy_library')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold">
+                    <BookMarked className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-teal-500/10 text-teal-300 px-2 py-0.5 rounded font-mono">3D Bookshelf</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-teal-300 transition">Pharmacy Library &amp; Readable Bookshelf</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Interactive wooden bookshelf with DiPiro 12th Ed, Goodman &amp; Gilman, BP 2024, Stockley&apos;s, and Goldfrank&apos;s with text-to-speech narration.
+                </p>
+                <div className="text-[11px] text-teal-400 font-semibold flex items-center gap-1 pt-1">
+                  <span>Open Readable Bookshelf</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Card 8: Universal Drug Compendium & DIS */}
+              <div 
+                onClick={() => onLaunchApp('medical_advancements')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 flex items-center justify-center font-bold">
+                    <Pill className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded font-mono">Active • Expelled • Pipeline</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-teal-300 transition">Universal Drug Compendium &amp; Advancements</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Everything about drugs (active, expelled forensics, pipeline), breakthrough scenarios (Lenacapavir, BPaLM, Casgevy), and DIS consultation desk.
+                </p>
+                <div className="text-[11px] text-indigo-300 font-semibold flex items-center gap-1 pt-1">
+                  <span>Explore Drug Compendium &amp; DIS</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
             </div>
           </div>
         </div>

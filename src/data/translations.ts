@@ -310,7 +310,9 @@ export const translations: Record<Language, TranslationDictionary> = {
     epssHubs: "خريطة مراكز الإمداد الدوائي الإقليمية EPSS (19 مركزاً)",
     geminiVoice: "استشارة صوتية مباشرة مع مساعد Gemini (50 بر)",
     pharmaTube: "منصة فارما تيوب والترفيه الصيدلاني (100 بر)",
-    docToPpt: "تحويل المستندات إلى عروض تقديمية PPT (50 بر)"
+    docToPpt: "تحويل المستندات إلى عروض تقديمية PPT (50 بر)",
+    clinicalCalculator: "الحاسبة السريرية (CrCl، BMI، معدل التنقيط)",
+    exitExam: "تحضير امتحان التخرج وNGAT (50 بر)"
   },
   es: {
     appName: "Pharma Star App Pro",
@@ -360,6 +362,8 @@ export const translations: Record<Language, TranslationDictionary> = {
     epssHubs: "Mapa de Centros de Suministro Regional EPSS (19 Hubs)",
     geminiVoice: "Consulta de Audio 1-a-1 con Agente Gemini (50 Birr)",
     pharmaTube: "PharmaTube y Zona de Entretenimiento (100 Birr)",
-    docToPpt: "Conversor de Documentos a Presentación PPT (50 Birr)"
+    docToPpt: "Conversor de Documentos a Presentación PPT (50 Birr)",
+    clinicalCalculator: "Calculadora Clínica (CrCl, IMC, Goteo IV)",
+    exitExam: "Preparación Examen de Salida y NGAT (50 Birr)"
   }
 };
