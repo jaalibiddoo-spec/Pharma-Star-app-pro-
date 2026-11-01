@@ -1,15 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calculator, Activity, Droplets, Scale, Stethoscope, 
   RefreshCw, Copy, Check, Info, ShieldCheck, AlertTriangle, 
-  Baby, HeartPulse, ChevronRight, ArrowRight
+  Baby, HeartPulse, ChevronRight, ArrowRight, Sparkles, Filter, 
+  Search, Printer, Pill, UserCheck, CheckCircle2, X
 } from 'lucide-react';
+import { renalDrugAdjustmentRules, RenalDrugAdjustmentRule } from '../data/renalDrugDosingData';
+import { initialPatientsData } from '../data/patientsData';
+import { PatientRenalLabSync } from '../types';
 
-export const ClinicalCalculator: React.FC = () => {
+interface ClinicalCalculatorProps {
+  initialCalc?: 'crcl' | 'renal_dosing' | 'bmi' | 'iv_drip' | 'pediatric' | 'timi' | 'childpugh' | 'padua' | 'curb65' | 'cha2ds2vasc';
+}
+
+export const ClinicalCalculator: React.FC<ClinicalCalculatorProps> = ({ initialCalc = 'crcl' }) => {
   const [activeCalc, setActiveCalc] = useState<
-    'crcl' | 'bmi' | 'iv_drip' | 'pediatric' | 'timi' | 'childpugh' | 'padua' | 'curb65' | 'cha2ds2vasc'
-  >('crcl');
+    'crcl' | 'renal_dosing' | 'bmi' | 'iv_drip' | 'pediatric' | 'timi' | 'childpugh' | 'padua' | 'curb65' | 'cha2ds2vasc'
+  >(initialCalc);
   const [copiedText, setCopiedText] = useState(false);
+  const [copiedDrugId, setCopiedDrugId] = useState<string | null>(null);
+
+  // Sync state between Lab Interpreter and Clinical Calculator
+  const [syncedLabData, setSyncedLabData] = useState<PatientRenalLabSync | null>(null);
+  const [syncBannerDismissed, setSyncBannerDismissed] = useState(false);
+  const [selectedPatientPreset, setSelectedPatientPreset] = useState<string>('');
+  const [renalCategoryFilter, setRenalCategoryFilter] = useState<string>('all');
+  const [renalSearchQuery, setRenalSearchQuery] = useState<string>('');
+  const [renalSeverityFilter, setRenalSeverityFilter] = useState<'all' | 'critical' | 'reduced' | 'contraindicated'>('all');
 
   // =========================================================================
   // 1. CrCl (Cockcroft-Gault) & CKD Calculator State
@@ -20,6 +37,64 @@ export const ClinicalCalculator: React.FC = () => {
   const [crclHeightCm, setCrclHeightCm] = useState<number>(172);
   const [crclScr, setCrclScr] = useState<number>(1.6);
   const [weightBasis, setWeightBasis] = useState<'actual' | 'ibw' | 'adjbw'>('actual');
+
+  // Cross-component auto-sync listener for patient renal parameters
+  useEffect(() => {
+    const checkSync = () => {
+      try {
+        const stored = localStorage.getItem('pharmastar_patient_lab_renal');
+        if (stored) {
+          const parsed: PatientRenalLabSync = JSON.parse(stored);
+          setSyncedLabData(parsed);
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    checkSync();
+    window.addEventListener('storage', checkSync);
+    window.addEventListener('pharmastar_renal_sync', checkSync);
+    return () => {
+      window.removeEventListener('storage', checkSync);
+      window.removeEventListener('pharmastar_renal_sync', checkSync);
+    };
+  }, []);
+
+  const handleApplySyncedLab = (lab: PatientRenalLabSync) => {
+    setCrclAge(lab.age);
+    setCrclGender(lab.gender);
+    setCrclWeight(lab.weightKg);
+    if (lab.heightCm) setCrclHeightCm(lab.heightCm);
+    setCrclScr(lab.serumCreatinine);
+    setSyncBannerDismissed(true);
+  };
+
+  const handleLoadPatientPreset = (patientId: string) => {
+    const patient = initialPatientsData.find(p => p.id === patientId);
+    if (patient) {
+      setSelectedPatientPreset(patientId);
+      setCrclAge(patient.age);
+      setCrclGender(patient.gender);
+      setCrclWeight(patient.weightKg);
+      if (patient.heightCm) setCrclHeightCm(patient.heightCm);
+      setCrclScr(patient.serumCreatinine);
+      const synced: PatientRenalLabSync = {
+        patientId: patient.id,
+        patientName: patient.fullName,
+        age: patient.age,
+        gender: patient.gender,
+        weightKg: patient.weightKg,
+        heightCm: patient.heightCm,
+        serumCreatinine: patient.serumCreatinine,
+        calculatedCrCl: Math.round(((140 - patient.age) * patient.weightKg) / (72 * patient.serumCreatinine) * (patient.gender === 'Female' ? 0.85 : 1)),
+        ckdStage: patient.serumCreatinine >= 2 ? 'Stage 4 Severe' : patient.serumCreatinine >= 1.5 ? 'Stage 3b Moderate' : 'Stage 1-2 Mild',
+        source: 'Inpatient EHR',
+        lastUpdated: new Date().toLocaleTimeString()
+      };
+      setSyncedLabData(synced);
+      localStorage.setItem('pharmastar_patient_lab_renal', JSON.stringify(synced));
+    }
+  };
 
   // Height in inches
   const heightInches = crclHeightCm / 2.54;
@@ -263,6 +338,74 @@ export const ClinicalCalculator: React.FC = () => {
     setTimeout(() => setCopiedText(false), 2000);
   };
 
+  // Copy Pharmacist Renal Dosing Consultation SOAP Note
+  const handleCopyRenalConsultNote = (drug: RenalDrugAdjustmentRule) => {
+    const adj = drug.calculateAdjustedDose(roundedCrCl, effectiveWeight, crclAge, crclScr);
+    const note = `=====================================================
+PHARMASTAR CLINICAL PHARMACY RENAL DOSING CONSULT
+=====================================================
+Patient: ${syncedLabData?.patientName || 'Inpatient Consultation'} | Age: ${crclAge}y | Sex: ${crclGender} | Wt: ${effectiveWeight} kg
+Serum Creatinine: ${crclScr} mg/dL | Calculated CrCl: ${roundedCrCl} mL/min (${ckdStage})
+Weight Basis Used: ${weightBasis.toUpperCase()}
+
+MEDICATION EVALUATED:
+Drug: ${drug.drugName} (${drug.brandNames.join(', ')})
+Standard Dose: ${drug.standardDose}
+
+RENAL DOSING DIRECTIVE:
+Adjusted Dose: ${adj.adjustedDose}
+Administration Frequency: ${adj.frequency}
+Dose Adjustment Impact: ${adj.reductionPercentage}
+Clinical Status: ${adj.status.toUpperCase()}
+
+CLINICAL ALERT & WARNING:
+${adj.clinicalWarning}
+
+PHARMACOTHERAPY MONITORING PLAN:
+${adj.monitoringParameters.map(p => `• ${p}`).join('\n')}
+
+Guideline Basis: ${drug.guidelineReference}
+Consulting Clinical Pharmacist: Dawid Aliyi, BCPS
+Verified at: ${new Date().toLocaleString()}
+=====================================================`;
+
+    navigator.clipboard.writeText(note);
+    setCopiedDrugId(drug.id);
+    setTimeout(() => setCopiedDrugId(null), 2500);
+  };
+
+  // Copy Full Inpatient Regimen Renal Review
+  const handleCopyFullRegimenNote = () => {
+    const list = renalDrugAdjustmentRules.map(drug => {
+      const adj = drug.calculateAdjustedDose(roundedCrCl, effectiveWeight, crclAge, crclScr);
+      return `[${drug.drugName}]
+Standard: ${drug.standardDose}
+Adjusted Dose: ${adj.adjustedDose} (${adj.frequency})
+Status: ${adj.status.toUpperCase()} (${adj.reductionPercentage})
+Warning: ${adj.clinicalWarning}
+Monitoring: ${adj.monitoringParameters.join(', ')}`;
+    }).join('\n\n');
+
+    const fullNote = `=====================================================
+COMPLETE INPATIENT RENAL PHARMACOTHERAPY DOSING AUDIT
+=====================================================
+Patient: ${syncedLabData?.patientName || 'Inpatient Profile'} | Age: ${crclAge}y | Gender: ${crclGender} | Weight: ${effectiveWeight} kg
+Serum Creatinine: ${crclScr} mg/dL | Cockcroft-Gault CrCl: ${roundedCrCl} mL/min
+Renal Classification: ${ckdStage}
+Timestamp: ${new Date().toLocaleString()}
+
+INDIVIDUAL DRUG DOSING DIRECTIVES:
+${list}
+
+Consulting Clinical Pharmacist: Dawid Aliyi, BCPS (Lead Pharmacotherapy Specialist)
+Clinical Audit Status: Verified according to Ethiopian National STG & Renal Dosing Compendium
+=====================================================`;
+
+    navigator.clipboard.writeText(fullNote);
+    setCopiedText(true);
+    setTimeout(() => setCopiedText(false), 2500);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -274,11 +417,11 @@ export const ClinicalCalculator: React.FC = () => {
                 <Calculator className="w-3 h-3 text-teal-400" />
                 Clinical Pharmacotherapy Engine
               </span>
-              <span className="text-[11px] text-slate-400">Verified Cockcroft-Gault, Mosteller & IV Nomograms</span>
+              <span className="text-[11px] text-slate-400">Verified Cockcroft-Gault, Mosteller & Renal Dose Nomograms</span>
             </div>
             <h2 className="text-xl md:text-2xl font-black text-white">Clinical Pharmacist Medical Calculators</h2>
             <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-              Precision clinical formulas for hospital wards, ICU, and outpatient dispensaries: Renal clearance, body composition, IV drip rates, and pediatric weight-based dosing.
+              Precision clinical formulas for hospital wards, ICU, and outpatient dispensaries: Renal clearance, patient-specific drug dosing auto-adjustment, body composition, and IV infusions.
             </p>
           </div>
 
@@ -301,6 +444,22 @@ export const ClinicalCalculator: React.FC = () => {
           >
             <Activity className="w-3.5 h-3.5 text-teal-300" />
             <span>CrCl (Cockcroft-Gault) & Renal Staging</span>
+          </button>
+
+          {/* Auto-Adjust Drug Dosing Tab */}
+          <button
+            onClick={() => setActiveCalc('renal_dosing')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer relative ${
+              activeCalc === 'renal_dosing'
+                ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-lg ring-2 ring-teal-400/40'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            <span>Auto-Adjust Drug Dosing by CrCl</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-teal-400/20 text-teal-300 border border-teal-400/30">
+              Lab Synced
+            </span>
           </button>
 
           <button
@@ -405,7 +564,57 @@ export const ClinicalCalculator: React.FC = () => {
       {/* 1. CrCl (COCKCROFT-GAULT) & RENAL DOSING CALCULATOR */}
       {/* ========================================================================= */}
       {activeCalc === 'crcl' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="space-y-4">
+          {/* Lab Interpreter Patient Sync & Preset Loader Banner */}
+          <div className="bg-slate-900 border border-teal-500/30 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20 shrink-0">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-white">Lab Interpreter Renal Data Synchronization</h4>
+                  {syncedLabData && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                      Live Sync: {syncedLabData.patientName} (CrCl {syncedLabData.calculatedCrCl} mL/min)
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  Synchronize patient creatinine, age, and weight directly from Lab Interpreter, or load an Ethiopian inpatient EHR profile.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {syncedLabData && (
+                <button
+                  onClick={() => handleApplySyncedLab(syncedLabData)}
+                  className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Apply Lab Values</span>
+                </button>
+              )}
+              <div className="flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-slate-400" />
+                <select
+                  value={selectedPatientPreset}
+                  onChange={(e) => handleLoadPatientPreset(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-medium focus:border-teal-500 cursor-pointer"
+                >
+                  <option value="">Load Inpatient Profile...</option>
+                  {initialPatientsData.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.fullName} ({p.age}y, {p.gender}, SCr {p.serumCreatinine} mg/dL)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Inputs */}
           <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -600,7 +809,363 @@ export const ClinicalCalculator: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Direct Link to Auto-Adjust Drug Dosing */}
+              <button
+                onClick={() => setActiveCalc('renal_dosing')}
+                className="w-full mt-4 py-3 px-4 rounded-xl bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg hover:shadow-teal-500/20 transition cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                <span>Auto-Adjust Drug Dosing for this Clearance ({roundedCrCl} mL/min) ➔</span>
+              </button>
             </div>
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* RENAL DOSING AUTO-ADJUSTMENT ENGINE (BY CrCl & LAB DATA) */}
+      {/* ========================================================================= */}
+      {activeCalc === 'renal_dosing' && (
+        <div className="space-y-6">
+          {/* Patient Clearance Context Card */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-teal-950/40 border border-teal-500/30 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/40 flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-amber-300" />
+                    Patient-Specific Renal Dose Auto-Adjustment Engine
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Source: {syncedLabData ? `Lab Interpreter (${syncedLabData.patientName})` : 'Active Calculator Values'}
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                  <span>Renal Clearance:</span>
+                  <span className="font-mono text-teal-400">{roundedCrCl} mL/min</span>
+                  <span className={`text-xs px-3 py-1 rounded-full font-bold border ${ckdColor}`}>
+                    {ckdStage}
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-300 mt-1">
+                  Patient Profile: <strong>{syncedLabData?.patientName || 'Clinical Inpatient'}</strong> | Age: <strong>{crclAge}y</strong> | Sex: <strong>{crclGender}</strong> | Weight: <strong>{effectiveWeight} kg</strong> ({weightBasis.toUpperCase()}) | Serum Creatinine: <strong>{crclScr} mg/dL</strong>
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setActiveCalc('crcl')}
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition cursor-pointer"
+                >
+                  <Activity className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Modify Lab / Parameters</span>
+                </button>
+                <button
+                  onClick={handleCopyFullRegimenNote}
+                  className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-teal-600/20 transition cursor-pointer"
+                >
+                  {copiedText ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedText ? 'Copied Regimen Note!' : 'Copy Full Regimen SOAP Note'}</span>
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Print Note</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Renal Clearance Scenarios / Stress-Test Bar */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Simulate Clinical Renal Clearance Scenarios:
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <button
+                  onClick={() => setCrclScr(0.8)}
+                  className={`p-2 rounded-xl border text-center transition cursor-pointer ${
+                    roundedCrCl >= 90 ? 'bg-emerald-600/30 border-emerald-500 text-emerald-200 font-bold' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="text-[10px] block font-semibold text-slate-400">Normal (Stage 1)</span>
+                  <span className="text-xs font-bold font-mono">CrCl &gt; 90 mL/min</span>
+                </button>
+                <button
+                  onClick={() => setCrclScr(1.3)}
+                  className={`p-2 rounded-xl border text-center transition cursor-pointer ${
+                    roundedCrCl >= 60 && roundedCrCl < 90 ? 'bg-teal-600/30 border-teal-500 text-teal-200 font-bold' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="text-[10px] block font-semibold text-slate-400">Mild (Stage 2)</span>
+                  <span className="text-xs font-bold font-mono">CrCl 60-89 mL/min</span>
+                </button>
+                <button
+                  onClick={() => setCrclScr(2.0)}
+                  className={`p-2 rounded-xl border text-center transition cursor-pointer ${
+                    roundedCrCl >= 30 && roundedCrCl < 60 ? 'bg-amber-600/30 border-amber-500 text-amber-200 font-bold' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="text-[10px] block font-semibold text-slate-400">Moderate (Stage 3)</span>
+                  <span className="text-xs font-bold font-mono">CrCl 30-59 mL/min</span>
+                </button>
+                <button
+                  onClick={() => setCrclScr(3.5)}
+                  className={`p-2 rounded-xl border text-center transition cursor-pointer ${
+                    roundedCrCl >= 15 && roundedCrCl < 30 ? 'bg-rose-600/30 border-rose-500 text-rose-200 font-bold' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="text-[10px] block font-semibold text-slate-400">Severe (Stage 4)</span>
+                  <span className="text-xs font-bold font-mono">CrCl 15-29 mL/min</span>
+                </button>
+                <button
+                  onClick={() => setCrclScr(5.5)}
+                  className={`p-2 rounded-xl border text-center transition cursor-pointer ${
+                    roundedCrCl < 15 ? 'bg-rose-900/50 border-rose-500 text-rose-300 font-bold ring-1 ring-rose-500' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="text-[10px] block font-semibold text-rose-400">Failure / Dialysis</span>
+                  <span className="text-xs font-bold font-mono text-rose-300">CrCl &lt; 15 mL/min</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search 14 renally adjusted drugs (e.g., Vancomycin, Enoxaparin, Cefepime, Metformin, Apixaban)..."
+                  value={renalSearchQuery}
+                  onChange={(e) => setRenalSearchQuery(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:border-teal-500"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { id: 'all', label: 'All Classes' },
+                  { id: 'Antimicrobials', label: 'Antimicrobials' },
+                  { id: 'Cardiovascular & Anticoagulants', label: 'Cardio & Anticoagulants' },
+                  { id: 'Diabetes & Endocrine', label: 'Diabetes' },
+                  { id: 'Analgesics & Gout', label: 'Analgesics & Gout' }
+                ].map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setRenalCategoryFilter(cat.id)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      renalCategoryFilter === cat.id
+                        ? 'bg-teal-600 text-white shadow'
+                        : 'bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Severity Sub-Filter */}
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-800 text-xs">
+              <span className="text-[10px] text-slate-400 font-bold uppercase">Filter by Action:</span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  onClick={() => setRenalSeverityFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition ${
+                    renalSeverityFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-950 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  All Statuses
+                </button>
+                <button
+                  onClick={() => setRenalSeverityFilter('critical')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition ${
+                    renalSeverityFilter === 'critical' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-slate-950 text-slate-400 hover:text-rose-300'
+                  }`}
+                >
+                  Critical Toxicity Warnings
+                </button>
+                <button
+                  onClick={() => setRenalSeverityFilter('reduced')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition ${
+                    renalSeverityFilter === 'reduced' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-950 text-slate-400 hover:text-amber-300'
+                  }`}
+                >
+                  Dose Reductions / Extended
+                </button>
+                <button
+                  onClick={() => setRenalSeverityFilter('contraindicated')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition ${
+                    renalSeverityFilter === 'contraindicated' ? 'bg-rose-600 text-white' : 'bg-slate-950 text-slate-400 hover:text-rose-400'
+                  }`}
+                >
+                  Contraindicated Drugs
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Dosing Adjustment Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {renalDrugAdjustmentRules
+              .filter(drug => {
+                const matchesCategory = renalCategoryFilter === 'all' || drug.category === renalCategoryFilter;
+                const matchesSearch = drug.drugName.toLowerCase().includes(renalSearchQuery.toLowerCase()) ||
+                  drug.brandNames.some(b => b.toLowerCase().includes(renalSearchQuery.toLowerCase()));
+                const adj = drug.calculateAdjustedDose(roundedCrCl, effectiveWeight, crclAge, crclScr);
+                const matchesSeverity = renalSeverityFilter === 'all' || 
+                  (renalSeverityFilter === 'critical' && adj.alertSeverity === 'critical') ||
+                  (renalSeverityFilter === 'contraindicated' && adj.status === 'contraindicated') ||
+                  (renalSeverityFilter === 'reduced' && (adj.status === 'reduced' || adj.status === 'extended_interval'));
+                return matchesCategory && matchesSearch && matchesSeverity;
+              })
+              .map(drug => {
+                const adj = drug.calculateAdjustedDose(roundedCrCl, effectiveWeight, crclAge, crclScr);
+                const isContraindicated = adj.status === 'contraindicated';
+                const isReduced = adj.status === 'reduced' || adj.status === 'extended_interval';
+
+                return (
+                  <div
+                    key={drug.id}
+                    className={`rounded-2xl border p-5 shadow-xl transition-all flex flex-col justify-between ${
+                      isContraindicated
+                        ? 'bg-gradient-to-b from-rose-950/20 to-slate-900 border-rose-500/40'
+                        : isReduced
+                        ? 'bg-gradient-to-b from-amber-950/15 to-slate-900 border-amber-500/40'
+                        : 'bg-slate-900 border-slate-800'
+                    }`}
+                  >
+                    <div className="space-y-3.5">
+                      {/* Drug Header */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-teal-300 border border-slate-700">
+                              {drug.category}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {drug.brandNames.join(', ')}
+                            </span>
+                          </div>
+                          <h4 className="text-base font-bold text-white flex items-center gap-2">
+                            <Pill className="w-4 h-4 text-teal-400 shrink-0" />
+                            <span>{drug.drugName}</span>
+                          </h4>
+                        </div>
+
+                        {/* Status Badge */}
+                        <span
+                          className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border shrink-0 ${
+                            isContraindicated
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                              : isReduced
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                          }`}
+                        >
+                          {adj.reductionPercentage}
+                        </span>
+                      </div>
+
+                      {/* Standard vs Patient-Adjusted Dose */}
+                      <div className="space-y-2 text-xs">
+                        {/* Standard Unadjusted Dose */}
+                        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">
+                            Standard Unadjusted Dose (CrCl &gt; 60 mL/min)
+                          </span>
+                          <p className="text-slate-300 text-xs font-mono">{drug.standardDose}</p>
+                        </div>
+
+                        {/* Patient-Adjusted Dose (Prominent) */}
+                        <div
+                          className={`p-3 rounded-xl border ${
+                            isContraindicated
+                              ? 'bg-rose-950/30 border-rose-500/40 text-rose-200'
+                              : isReduced
+                              ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
+                              : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider">
+                              Patient Adjusted Dose for CrCl {roundedCrCl} mL/min:
+                            </span>
+                            <span className="text-[10px] font-mono font-bold">
+                              {adj.frequency}
+                            </span>
+                          </div>
+                          <div className="text-sm font-bold font-mono">
+                            {adj.adjustedDose}
+                          </div>
+                          <p className="text-[11px] mt-1.5 opacity-90 leading-relaxed">
+                            {adj.recommendationSummary}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Clinical Warning Box */}
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] space-y-1">
+                        <div className="flex items-center gap-1.5 text-rose-400 font-bold">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                          <span>Clinical Safety Alert:</span>
+                        </div>
+                        <p className="text-slate-300 leading-relaxed pl-5">
+                          {adj.clinicalWarning}
+                        </p>
+                      </div>
+
+                      {/* Monitoring Parameters */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase block">
+                          Key Monitoring Parameters:
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {adj.monitoringParameters.map((param, pIdx) => (
+                            <span
+                              key={pIdx}
+                              className="px-2 py-0.5 rounded text-[10px] bg-slate-950 border border-slate-800 text-slate-300 font-mono"
+                            >
+                              • {param}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Footer: Guideline & Copy Consultation SOAP Button */}
+                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 text-xs">
+                      <span className="text-[10px] text-slate-500 truncate max-w-[200px]" title={drug.guidelineReference}>
+                        Ref: {drug.guidelineReference}
+                      </span>
+                      <button
+                        onClick={() => handleCopyRenalConsultNote(drug)}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 text-[11px] font-bold flex items-center gap-1 border border-teal-500/20 transition cursor-pointer"
+                      >
+                        {copiedDrugId === drug.id ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400">Copied SOAP Note!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-teal-400" />
+                            <span>Copy Renal SOAP Note</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}

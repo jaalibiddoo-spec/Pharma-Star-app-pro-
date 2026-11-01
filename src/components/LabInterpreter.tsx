@@ -3,10 +3,15 @@ import { labTestsData } from '../data/labInterpretationData';
 import { LabTest } from '../types';
 import { 
   Activity, AlertCircle, AlertTriangle, CheckCircle2, 
-  Calculator, ChevronRight, Search, Stethoscope, ArrowRight 
+  Calculator, ChevronRight, Search, Stethoscope, ArrowRight,
+  Pill, Sparkles, ShieldCheck
 } from 'lucide-react';
 
-export const LabInterpreter: React.FC = () => {
+interface LabInterpreterProps {
+  onNavigateToCalculator?: (calcTab?: string) => void;
+}
+
+export const LabInterpreter: React.FC<LabInterpreterProps> = ({ onNavigateToCalculator }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTestId, setSelectedTestId] = useState<string>(labTestsData[0].id);
@@ -25,6 +30,29 @@ export const LabInterpreter: React.FC = () => {
     const base = ((140 - cgAge) * cgWeight) / (72 * cgScr);
     return Math.round(cgGender === 'Female' ? base * 0.85 : base);
   })();
+
+  // Auto-sync patient renal data to localStorage for the Clinical Calculator
+  React.useEffect(() => {
+    try {
+      const syncData = {
+        patientName: "Active Inpatient Case",
+        age: cgAge,
+        gender: cgGender,
+        weightKg: cgWeight,
+        serumCreatinine: cgScr,
+        calculatedCrCl: calculatedCrCl,
+        ckdStage: calculatedCrCl < 15 ? 'Stage 5 (Kidney Failure)' :
+                  calculatedCrCl < 30 ? 'Stage 4 (Severe Impairment)' :
+                  calculatedCrCl < 60 ? 'Stage 3 (Moderate Impairment)' :
+                  calculatedCrCl < 90 ? 'Stage 2 (Mild Impairment)' : 'Stage 1 (Normal)',
+        source: 'Lab Interpreter Simulator',
+        lastUpdated: new Date().toISOString()
+      };
+      localStorage.setItem('pharmastar_patient_lab_renal', JSON.stringify(syncData));
+    } catch {
+      // ignore
+    }
+  }, [cgAge, cgWeight, cgScr, cgGender, calculatedCrCl]);
 
   const activeTest = labTestsData.find(t => t.id === selectedTestId) || labTestsData[0];
 
@@ -283,6 +311,28 @@ export const LabInterpreter: React.FC = () => {
                   {calculatedCrCl < 15 && <span className="text-rose-500 font-extrabold">Kidney Failure / Dialysis (&lt;15 mL/min)</span>}
                 </div>
               </div>
+            </div>
+
+            {/* Quick Action to Auto-Adjust Drug Dosing in Clinical Calculator */}
+            <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-teal-950/20 p-3.5 rounded-xl border border-teal-500/30">
+              <div className="flex items-center gap-2">
+                <Pill className="w-4 h-4 text-teal-400 shrink-0" />
+                <span className="text-xs text-slate-200">
+                  Patient CrCl (<strong>{calculatedCrCl} mL/min</strong>) is synced with Clinical Calculator.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onNavigateToCalculator) {
+                    onNavigateToCalculator('renal_dosing');
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition cursor-pointer shrink-0"
+              >
+                <span>Auto-Adjust Drug Dosing</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>

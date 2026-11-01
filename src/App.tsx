@@ -49,6 +49,11 @@ import { DrugTherapyProblemIdentifier } from './components/DrugTherapyProblemIde
 import { NationalTrainingManualsHub } from './components/NationalTrainingManualsHub';
 import { PharmacyLibraryBookshelf } from './components/PharmacyLibraryBookshelf';
 import { MedicalAdvancementsAndDrugDirectory } from './components/MedicalAdvancementsAndDrugDirectory';
+import { DaguELMISModule } from './components/DaguELMISModule';
+import { AuditablePharmaceuticalTransactions } from './components/AuditablePharmaceuticalTransactions';
+import { AbcVenAnalysisAndFsml } from './components/AbcVenAnalysisAndFsml';
+import { UniversalPaymentModal } from './components/UniversalPaymentModal';
+import { PHARMASTAR_SERVICES, PaymentServiceItem } from './data/paymentServicesConfig';
 import { getStoredUser, saveUserAndPayment } from './utils/userStorage';
 import { PaymentRecord } from './types';
 
@@ -60,7 +65,7 @@ import {
   Award, Building2, BookMarked, ExternalLink, Layout, Package,
   FileCheck2, Scan, Headphones, Truck, Presentation, Tv, Flame,
   Radio, HelpCircle, Calculator, Store, Receipt, GitBranch, Github,
-  Share2, GraduationCap, BarChart3, AlertTriangle, FileScan
+  Share2, GraduationCap, BarChart3, AlertTriangle, FileScan, Scale
 } from 'lucide-react';
 
 export default function App() {
@@ -73,7 +78,7 @@ export default function App() {
     'sponsorships' | 'anti_counterfeit' | 'audio_pearls' | 'epss_logistics' |
     'gemini_voice' | 'pharmatube' | 'doc_to_ppt' | 'developer_feedback' | 'outbreak_cpd' |
     'internet_packages' | 'clinical_calc' | 'exit_exam' | 'wholesaler_portal' | 'institutional_sponsor' |
-    'admin_analytics' | 'telemedicine' | 'radiology_portal' | 'dermatology_suite' | 'dtp_identifier' | 'national_manuals'
+    'admin_analytics' | 'telemedicine' | 'radiology_portal' | 'dermatology_suite' | 'dtp_identifier' | 'national_manuals' | 'dagu_elmis' | 'pharma_transactions' | 'abc_ven_analysis'
   >('courses');
 
   // User Authentication State with localStorage cross-platform persistence and auto-remember
@@ -92,9 +97,17 @@ export default function App() {
   const [isGitHubSyncOpen, setIsGitHubSyncOpen] = useState(false);
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
   const [isRecommendModalOpen, setIsRecommendModalOpen] = useState(false);
+  const [universalPayModalOpen, setUniversalPayModalOpen] = useState(false);
+  const [selectedPayService, setSelectedPayService] = useState<PaymentServiceItem | null>(null);
   const [videoModalCourse, setVideoModalCourse] = useState<Course | null>(null);
   const [active3DModelId, setActive3DModelId] = useState<string>("gpcr_beta_blocker");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleOpenUniversalPayment = (serviceId?: string) => {
+    const s = PHARMASTAR_SERVICES.find(srv => srv.id === serviceId) || PHARMASTAR_SERVICES[0];
+    setSelectedPayService(s);
+    setUniversalPayModalOpen(true);
+  };
 
   // Cross-Platform Auto-Sync across Website and App
   React.useEffect(() => {
@@ -146,8 +159,8 @@ export default function App() {
     const newPayment: PaymentRecord = {
       id: `pay-${Date.now()}`,
       transactionRef: refCode || `CBE-${Date.now().toString().slice(-6)}`,
-      paymentMethod: 'CBE Birr',
-      amountETB: 100,
+      paymentMethod: 'Chapa Gateway',
+      amountETB: 1000,
       serviceName: 'Pharma Star Pro Registration & CPD Access',
       serviceId: 'registration',
       timestamp: new Date().toISOString(),
@@ -224,6 +237,9 @@ export default function App() {
     { id: 'patient_history', label: t.patientHistory, icon: Users },
     { id: 'med_tracker', label: t.medTracker, icon: Stethoscope },
     { id: 'live_chat', label: t.liveChat, icon: MessageSquare },
+    { id: 'dagu_elmis', label: 'DAGU 2.0 eLMIS (Ethiopian Standard) & Facility Logistics', icon: Package },
+    { id: 'pharma_transactions', label: 'Auditable Pharmaceutical Transactions & Ledger', icon: ShieldCheck },
+    { id: 'abc_ven_analysis', label: 'ABC & VEN Analysis & Facility Medicine List (DTC)', icon: Scale },
     { id: 'guidelines', label: t.guidelines, icon: ShieldCheck },
     { id: 'sponsorships', label: t.sponsorships, icon: Building2 },
   ] as const;
@@ -363,6 +379,17 @@ export default function App() {
 
           {/* Right Controls: Switch to Website, Install App, Offline Sync, Language, User Profile */}
           <div className="flex items-center gap-2">
+            {/* Universal Payment & Unlock Services */}
+            <button
+              onClick={() => handleOpenUniversalPayment()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition shadow cursor-pointer"
+              title="CBE, Telebirr, CBE Birr & International Gateway (All Services)"
+            >
+              <CreditCard className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Pay &amp; Unlock</span>
+              <span className="sm:hidden">Pay</span>
+            </button>
+
             {/* View Mode: Switch to Website */}
             <button
               onClick={() => {
@@ -591,7 +618,7 @@ export default function App() {
 
         {/* Tab 4: Laboratory Test Result Interpretation */}
         {activeTab === 'lab_interpreter' && (
-          <LabInterpreter />
+          <LabInterpreter onNavigateToCalculator={() => setActiveTab('clinical_calc')} />
         )}
 
         {/* Tab 5: Patient History Management */}
@@ -747,6 +774,21 @@ export default function App() {
         {activeTab === 'medical_advancements' && (
           <MedicalAdvancementsAndDrugDirectory />
         )}
+
+        {/* Tab: DAGU 2.0 eLMIS (Ethiopian Standard) & Facility Logistics */}
+        {activeTab === 'dagu_elmis' && (
+          <DaguELMISModule onOpenPayment={(serviceId) => handleOpenUniversalPayment(serviceId)} />
+        )}
+
+        {/* Tab: Auditable Pharmaceutical Transactions & Multi-Store Ledger */}
+        {activeTab === 'pharma_transactions' && (
+          <AuditablePharmaceuticalTransactions currentUser={currentUser} />
+        )}
+
+        {/* Tab: ABC & VEN Analysis & Facility-Specific Medicine List (DTC) */}
+        {activeTab === 'abc_ven_analysis' && (
+          <AbcVenAnalysisAndFsml currentUser={currentUser} />
+        )}
       </main>
 
       {/* Footer */}
@@ -777,7 +819,7 @@ export default function App() {
             <span className="text-slate-600">•</span>
             <span>Bank: Commercial Bank of Ethiopia <strong className="text-white">1000262900367 (Dawid Aliyi)</strong></span>
             <span className="text-slate-600">•</span>
-            <span>Registration: 100 Birr / $1.00 USD</span>
+            <span>Registration: <strong className="text-white font-mono">1,000 Birr / $10.00 USD</strong> (Chapa, Telebirr, CBE)</span>
           </div>
         </div>
       </footer>
@@ -864,6 +906,20 @@ export default function App() {
       setViewMode('app');
     }}
   />
+
+  {universalPayModalOpen && (
+    <UniversalPaymentModal
+      isOpen={universalPayModalOpen}
+      onClose={() => setUniversalPayModalOpen(false)}
+      service={selectedPayService || PHARMASTAR_SERVICES[0]}
+      currentUser={currentUser}
+      onSuccess={(record, updatedUser) => {
+        setCurrentUser(updatedUser);
+        setUniversalPayModalOpen(false);
+        setIsRegSuccessModalOpen(true);
+      }}
+    />
+  )}
 </>
   );
 }

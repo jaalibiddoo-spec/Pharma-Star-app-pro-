@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { ExitExamQuestion, User } from '../types';
 import { sampleExitExamQuestions } from '../data/exitExamData';
+import { validatePaymentReference } from '../utils/paymentValidator';
 
 interface ExitExamPortalProps {
   currentUser: User;
@@ -29,8 +30,12 @@ export const ExitExamPortal: React.FC<ExitExamPortalProps> = ({
   });
 
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'telebirr' | 'cbe' | 'cbeBirr' | 'chapa'>('telebirr');
+  const [paymentMethod, setPaymentMethod] = useState<'telebirr' | 'cbe' | 'cbeBirr' | 'chapa' | 'international'>('telebirr');
   const [txRef, setTxRef] = useState('');
+  const [payerName, setPayerName] = useState(currentUser.fullName || '');
+  const [payerPhone, setPayerPhone] = useState(currentUser.phone || '09');
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState<'exam_sim' | 'ngat_prep' | 'domains' | 'study_guide'>('exam_sim');
   
   // Exam simulator state
@@ -70,36 +75,34 @@ export const ExitExamPortal: React.FC<ExitExamPortalProps> = ({
     };
   };
 
-  // Handle 50 Birr Unlock
+  // Handle 50 Birr Compulsory Unlock (Strict Anti-Bypass Enforced)
   const handleConfirmPayment = () => {
-    if (!txRef.trim()) return;
-
-    localStorage.setItem('pharmastar_unlocked_exit_exam', 'true');
-    setIsUnlocked(true);
-    setIsUnlockModalOpen(false);
-
-    if (onUpdateUser) {
-      onUpdateUser({
-        ...currentUser,
-        unlockedExitExam: true,
-        unlockedNgat: true
-      });
+    setPaymentError(null);
+    const validation = validatePaymentReference(txRef, paymentMethod, payerName, payerPhone);
+    if (!validation.isValid) {
+      setPaymentError(validation.errorMessage || 'Compulsory payment reference is required. Free bypass is strictly disabled.');
+      return;
     }
-  };
 
-  // Instant Free Access for Demo / Enrolled Students
-  const handleQuickDemoUnlock = () => {
-    localStorage.setItem('pharmastar_unlocked_exit_exam', 'true');
-    setIsUnlocked(true);
-    setIsUnlockModalOpen(false);
+    setIsVerifying(true);
+    setTimeout(() => {
+      const verifiedRef = validation.cleanedRef || txRef.trim().toUpperCase();
+      localStorage.setItem('pharmastar_unlocked_exit_exam', 'true');
+      setIsUnlocked(true);
+      setIsVerifying(false);
+      setIsUnlockModalOpen(false);
 
-    if (onUpdateUser) {
-      onUpdateUser({
-        ...currentUser,
-        unlockedExitExam: true,
-        unlockedNgat: true
-      });
-    }
+      if (onUpdateUser) {
+        onUpdateUser({
+          ...currentUser,
+          fullName: payerName || currentUser.fullName,
+          phone: payerPhone || currentUser.phone,
+          unlockedExitExam: true,
+          unlockedNgat: true,
+          cbeReference: verifiedRef
+        });
+      }
+    }, 1200);
   };
 
   return (
@@ -421,39 +424,87 @@ export const ExitExamPortal: React.FC<ExitExamPortalProps> = ({
                 <label className="text-slate-400 block mb-1">Select Payment Gateway</label>
                 <select
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as any)}
+                  onChange={(e) => { setPaymentMethod(e.target.value as any); setPaymentError(null); }}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"
                 >
-                  <option value="telebirr">Telebirr (0982852778)</option>
+                  <option value="telebirr">Telebirr (0982852778 - Dawid Aliyi)</option>
                   <option value="cbe">Commercial Bank of Ethiopia (1000262900367)</option>
-                  <option value="cbeBirr">CBE Birr (*847#)</option>
-                  <option value="chapa">Chapa Unified Payment</option>
+                  <option value="cbeBirr">CBE Birr (*847# - Merchant 262900)</option>
+                  <option value="chapa">Chapa Unified Multi-Bank Gateway</option>
+                  <option value="international">International Card / PayPal ($0.50 USD)</option>
                 </select>
               </div>
 
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">
+                    Payer Name <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Candidate Name"
+                    value={payerName}
+                    onChange={(e) => setPayerName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">
+                    Phone Number <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="09XXXXXXXX"
+                    value={payerPhone}
+                    onChange={(e) => setPayerPhone(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="text-slate-400 block mb-1">Payment Reference / SMS Code</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-slate-400 text-xs flex items-center gap-1 font-bold">
+                    <span>Compulsory Transaction Reference</span>
+                    <span className="text-rose-400">*</span>
+                  </label>
+                  <span className="text-[9px] text-slate-400 font-mono">Anti-Bypass Verified</span>
+                </div>
                 <input
                   type="text"
-                  placeholder="e.g. TB-EXAM-50-XXXXX"
+                  placeholder="e.g. TB9910421 or FT26012891"
                   value={txRef}
-                  onChange={(e) => setTxRef(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white font-mono"
+                  onChange={(e) => {
+                    setTxRef(e.target.value);
+                    if (paymentError) setPaymentError(null);
+                  }}
+                  className={`w-full bg-slate-950 border rounded-xl p-2.5 text-white font-mono text-xs ${
+                    paymentError ? 'border-rose-500' : 'border-slate-700'
+                  }`}
                 />
               </div>
 
-              <button
-                onClick={handleConfirmPayment}
-                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition cursor-pointer"
-              >
-                Confirm Payment & Unlock Exam Suite (50 Birr)
-              </button>
+              {/* Payment Error Display */}
+              {paymentError && (
+                <div className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/50 text-rose-300 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span className="leading-tight">{paymentError}</span>
+                </div>
+              )}
 
               <button
-                onClick={handleQuickDemoUnlock}
-                className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 text-xs font-semibold cursor-pointer border border-slate-700"
+                onClick={handleConfirmPayment}
+                disabled={isVerifying}
+                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                1-Click Free Entry for Enrolled Students
+                {isVerifying ? (
+                  <span>Verifying Bank Transaction...</span>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Verify 50 Birr &amp; Unlock Exam Suite</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

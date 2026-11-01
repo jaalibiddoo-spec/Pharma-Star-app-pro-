@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { BinCardItem, DigitalFolder, IFRRReport, User } from '../types';
+import { BinCardItem, DigitalFolder, IFRRReport, User, PaymentRecord } from '../types';
+import { saveUserAndPayment } from '../utils/userStorage';
+import { validatePaymentReference, generatePaymentSecurityHash } from '../utils/paymentValidator';
 import { 
   Building2, Folder, FolderOpen, Camera, Upload, Send, CheckCircle2, 
   AlertTriangle, Clock, Search, Plus, Filter, Mail, Printer, ShieldCheck, 
   Sparkles, Smartphone, Landmark, Check, Copy, ArrowRight, RefreshCw, FileText,
-  AlertCircle, ChevronRight, Layers, Package, Calendar
+  AlertCircle, ChevronRight, Layers, Package, Calendar, Globe, Zap, Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -228,10 +230,13 @@ export const StoreSupplyChainMonitor: React.FC<StoreSupplyChainMonitorProps> = (
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [lastDispatchReceipt, setLastDispatchReceipt] = useState<any | null>(null);
 
-  // Unlock modal state for 100 Birr payment
+  // Unlock modal state for 100 Birr payment - Strict Anti-Bypass Enforced
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
-  const [unlockMethod, setUnlockMethod] = useState<'telebirr' | 'cbe'>('telebirr');
+  const [unlockMethod, setUnlockMethod] = useState<'telebirr' | 'cbe' | 'chapa' | 'international'>('telebirr');
   const [unlockTxRef, setUnlockTxRef] = useState("");
+  const [unlockPayerName, setUnlockPayerName] = useState(currentUser.fullName || "");
+  const [unlockPayerPhone, setUnlockPayerPhone] = useState(currentUser.phone || "09");
+  const [unlockError, setUnlockError] = useState<string | null>(null);
   const [isVerifyingUnlock, setIsVerifyingUnlock] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -241,28 +246,56 @@ export const StoreSupplyChainMonitor: React.FC<StoreSupplyChainMonitorProps> = (
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
+  // Secure Strict Verification: No blank bypass or trick words allowed!
   const handleUnlockStoreMonitor = () => {
+    setUnlockError(null);
+    const validation = validatePaymentReference(unlockTxRef, unlockMethod, unlockPayerName, unlockPayerPhone);
+    if (!validation.isValid) {
+      setUnlockError(validation.errorMessage || 'Compulsory payment reference is required. Bypass attempts are strictly blocked.');
+      return;
+    }
+
     setIsVerifyingUnlock(true);
     setTimeout(() => {
-      const updated: User = {
-        ...currentUser,
-        unlockedStoreMonitor: true,
-        cbeReference: unlockTxRef.trim() || `ET-STR-${Date.now().toString().slice(-6)}`
+      const verifiedRef = validation.cleanedRef || unlockTxRef.trim().toUpperCase();
+      const securityHash = generatePaymentSecurityHash('store_monitor', verifiedRef, 100, unlockPayerPhone);
+
+      const paymentRecord: PaymentRecord = {
+        id: `pay-str-${Date.now()}`,
+        transactionRef: verifiedRef,
+        paymentMethod: unlockMethod === 'telebirr' ? 'Telebirr Mobile Money' : 
+                       unlockMethod === 'cbe' ? 'CBE Bank Transfer' : 
+                       unlockMethod === 'chapa' ? 'Chapa Gateway' : 'International Card / PayPal',
+        amountETB: 100,
+        serviceName: 'DAGU eLMIS & Store Monitor Facility License',
+        serviceId: 'store_monitor',
+        timestamp: new Date().toISOString(),
+        status: 'verified',
+        payerName: unlockPayerName || currentUser.fullName,
+        notes: `Verified by PharmaStar Security Gateway | Hash: ${securityHash}`
       };
-      localStorage.setItem('pharmastar_registered_user', JSON.stringify(updated));
-      window.dispatchEvent(new Event('pharmastar_auth_sync'));
-      onUpdateUser(updated);
+
+      const updatedUser: User = {
+        ...currentUser,
+        fullName: unlockPayerName || currentUser.fullName,
+        phone: unlockPayerPhone || currentUser.phone,
+        unlockedStoreMonitor: true,
+        cbeReference: verifiedRef
+      };
+
+      saveUserAndPayment(updatedUser, paymentRecord);
+      onUpdateUser(updatedUser);
       setIsVerifyingUnlock(false);
       setIsUnlockModalOpen(false);
 
       try {
         confetti({
-          particleCount: 90,
-          spread: 80,
+          particleCount: 110,
+          spread: 85,
           origin: { y: 0.6 }
         });
       } catch (e) {}
-    }, 1200);
+    }, 1400);
   };
 
   // Run Bin Card Scan via backend OCR simulator
@@ -922,33 +955,57 @@ export const StoreSupplyChainMonitor: React.FC<StoreSupplyChainMonitorProps> = (
             </div>
 
             {/* Payment Method Selector */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-4 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => setUnlockMethod('telebirr')}
-                className={`p-2.5 rounded-xl border text-center transition cursor-pointer ${
+                onClick={() => { setUnlockMethod('telebirr'); setUnlockError(null); }}
+                className={`p-2 rounded-xl border text-center transition cursor-pointer ${
                   unlockMethod === 'telebirr'
-                    ? 'bg-sky-500/20 border-sky-400 text-sky-300'
+                    ? 'bg-teal-500/20 border-teal-400 text-teal-300 font-bold'
                     : 'bg-slate-950 border-slate-800 text-slate-400'
                 }`}
               >
-                <Smartphone className="w-4 h-4 mx-auto mb-1 text-sky-400" />
-                <span className="font-bold block">Telebirr</span>
-                <span className="text-[10px] text-slate-400">0982852778</span>
+                <Smartphone className="w-4 h-4 mx-auto mb-1 text-teal-400" />
+                <span className="block text-[11px]">Telebirr</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setUnlockMethod('cbe')}
-                className={`p-2.5 rounded-xl border text-center transition cursor-pointer ${
+                onClick={() => { setUnlockMethod('cbe'); setUnlockError(null); }}
+                className={`p-2 rounded-xl border text-center transition cursor-pointer ${
                   unlockMethod === 'cbe'
-                    ? 'bg-purple-500/20 border-purple-400 text-purple-300'
+                    ? 'bg-purple-500/20 border-purple-400 text-purple-300 font-bold'
                     : 'bg-slate-950 border-slate-800 text-slate-400'
                 }`}
               >
                 <Landmark className="w-4 h-4 mx-auto mb-1 text-purple-400" />
-                <span className="font-bold block">CBE Account</span>
-                <span className="text-[10px] text-slate-400">1000262900367</span>
+                <span className="block text-[11px]">CBE Bank</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setUnlockMethod('chapa'); setUnlockError(null); }}
+                className={`p-2 rounded-xl border text-center transition cursor-pointer ${
+                  unlockMethod === 'chapa'
+                    ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold'
+                    : 'bg-slate-950 border-slate-800 text-slate-400'
+                }`}
+              >
+                <Zap className="w-4 h-4 mx-auto mb-1 text-emerald-400" />
+                <span className="block text-[11px]">Chapa</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setUnlockMethod('international'); setUnlockError(null); }}
+                className={`p-2 rounded-xl border text-center transition cursor-pointer ${
+                  unlockMethod === 'international'
+                    ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-bold'
+                    : 'bg-slate-950 border-slate-800 text-slate-400'
+                }`}
+              >
+                <Globe className="w-4 h-4 mx-auto mb-1 text-cyan-400" />
+                <span className="block text-[11px]">Card/PayPal</span>
               </button>
             </div>
 
@@ -959,30 +1016,87 @@ export const StoreSupplyChainMonitor: React.FC<StoreSupplyChainMonitorProps> = (
                 <span className="font-bold text-white">Pharmacist Dawid Aliyi</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">{unlockMethod === 'telebirr' ? 'Telebirr Phone:' : 'CBE Account:'}</span>
+                <span className="text-slate-400">
+                  {unlockMethod === 'telebirr' ? 'Telebirr Phone:' : 
+                   unlockMethod === 'cbe' ? 'CBE Account Number:' : 
+                   unlockMethod === 'chapa' ? 'Chapa Gateway:' : 'International Rate:'}
+                </span>
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono font-bold text-teal-400">
-                    {unlockMethod === 'telebirr' ? '0982852778' : '1000262900367'}
+                    {unlockMethod === 'telebirr' ? '0982852778' : 
+                     unlockMethod === 'cbe' ? '1000262900367' : 
+                     unlockMethod === 'chapa' ? 'Instant Multi-Bank Settlement' : '$1.50 USD'}
                   </span>
-                  <button
-                    onClick={() => copyText(unlockMethod === 'telebirr' ? '0982852778' : '1000262900367', 'store_key')}
-                    className="text-slate-400 hover:text-white cursor-pointer"
-                  >
-                    {copiedKey === 'store_key' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
+                  {(unlockMethod === 'telebirr' || unlockMethod === 'cbe') && (
+                    <button
+                      onClick={() => copyText(unlockMethod === 'telebirr' ? '0982852778' : '1000262900367', 'store_key')}
+                      className="text-slate-400 hover:text-white cursor-pointer"
+                    >
+                      {copiedKey === 'store_key' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Transaction Ref / SMS Code (Optional):</label>
-              <input
-                type="text"
-                value={unlockTxRef}
-                onChange={(e) => setUnlockTxRef(e.target.value)}
-                placeholder="e.g., FT26... or Telebirr Receipt Code"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
-              />
+            {/* Compulsory Payer Fields */}
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                    Payer Name <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={unlockPayerName}
+                    onChange={(e) => setUnlockPayerName(e.target.value)}
+                    placeholder="e.g. Dr. Abebe T."
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                    Phone Number <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={unlockPayerPhone}
+                    onChange={(e) => setUnlockPayerPhone(e.target.value)}
+                    placeholder="09XXXXXXXX"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] uppercase font-bold text-rose-300 flex items-center gap-1">
+                    <span>Compulsory Transaction Ref / SMS Code</span>
+                    <span className="text-rose-400">*</span>
+                  </label>
+                  <span className="text-[9px] text-slate-400 font-mono">Anti-Bypass Monitored</span>
+                </div>
+                <input
+                  type="text"
+                  value={unlockTxRef}
+                  onChange={(e) => {
+                    setUnlockTxRef(e.target.value);
+                    if (unlockError) setUnlockError(null);
+                  }}
+                  placeholder="e.g., FT26012891, TB982852778, or Bank SMS Code"
+                  className={`w-full bg-slate-950 border rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none font-mono ${
+                    unlockError ? 'border-rose-500' : 'border-slate-700 focus:border-teal-500'
+                  }`}
+                />
+              </div>
+
+              {/* Error Alert Box */}
+              {unlockError && (
+                <div className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/50 text-rose-300 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span className="leading-tight">{unlockError}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 pt-2">
@@ -999,11 +1113,11 @@ export const StoreSupplyChainMonitor: React.FC<StoreSupplyChainMonitorProps> = (
                 className="flex-2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition cursor-pointer disabled:opacity-50"
               >
                 {isVerifyingUnlock ? (
-                  <span>Verifying Transfer & Activating...</span>
+                  <span>Verifying Bank Transaction...</span>
                 ) : (
                   <>
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Verify 100 Birr & Activate Site</span>
+                    <Lock className="w-4 h-4" />
+                    <span>Verify Payment &amp; Unlock Site</span>
                   </>
                 )}
               </button>

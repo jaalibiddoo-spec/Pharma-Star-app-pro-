@@ -6,6 +6,7 @@ import {
   QrCode, Zap, Building2, Wallet, AlertCircle, KeyRound 
 } from 'lucide-react';
 import { PaymentMethodType, User } from '../types';
+import { validatePaymentReference } from '../utils/paymentValidator';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -19,13 +20,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   onUpgradeSuccess
 }) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'ETB' | 'USD'>('ETB');
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('cbe');
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('chapa');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [transactionRef, setTransactionRef] = useState('');
   const [payerName, setPayerName] = useState('');
   const [payerPhone, setPayerPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -34,48 +36,48 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       name: "Commercial Bank of Ethiopia (CBE)",
       accountNumber: "1000262900367",
       accountHolder: "Dawid Aliyi",
-      amountETB: 100,
-      instructions: "Transfer 100 Birr via CBE Mobile Banking, CBE Birr, or any CBE branch nationwide."
+      amountETB: 1000,
+      instructions: "Transfer 1,000 Birr via CBE Mobile Banking, CBE Birr, or any CBE branch nationwide."
     },
     telebirr: {
       name: "Telebirr (Ethio Telecom Mobile Money)",
       accountNumber: "0982852778",
       accountHolder: "Dawid Aliyi",
-      amountETB: 100,
-      instructions: "Send 100 Birr via Telebirr App or dial *127# to 0982852778."
+      amountETB: 1000,
+      instructions: "Send 1,000 Birr via Telebirr App or dial *127# to 0982852778."
     },
     cbe_birr: {
       name: "CBE Birr USSD Mobile Banking",
       ussdCode: "*847#",
       merchantCode: "262900",
       accountHolder: "Dawid Aliyi (1000262900367)",
-      amountETB: 100,
+      amountETB: 1000,
       instructions: "Dial *847# on your phone, choose 'Transfer to CBE Account' and enter 1000262900367."
     },
     chapa: {
       name: "Chapa Unified Ethiopian Payment Gateway",
       provider: "Chapa Financial Technologies",
-      amountETB: 100,
+      amountETB: 1000,
       instructions: "Instant checkout supporting Telebirr, CBE Birr, Awash Bank, Dashen (Amole), and domestic/international debit cards."
     },
     awash: {
       name: "Awash Bank",
       accountNumber: "0132047913300",
       accountHolder: "Dawid Aliyi",
-      amountETB: 100,
-      instructions: "Transfer 100 Birr via Awash Mobile Banking or branch deposit."
+      amountETB: 1000,
+      instructions: "Transfer 1,000 Birr via Awash Mobile Banking or branch deposit."
     },
     dashen: {
       name: "Dashen Bank / Amole",
       accountNumber: "5120262900367",
       accountHolder: "Dawid Aliyi",
-      amountETB: 100,
-      instructions: "Transfer 100 Birr via Amole App or Dashen Bank mobile banking."
+      amountETB: 1000,
+      instructions: "Transfer 1,000 Birr via Amole App or Dashen Bank mobile banking."
     },
     card_international: {
       name: "International Visa / Mastercard / PayPal",
-      amountUSD: 1.00,
-      instructions: "Subsidized global medical education rate for international pharmacists & students."
+      amountUSD: 10.00,
+      instructions: "Subsidized global medical education rate for international pharmacists & students ($10.00 USD)."
     }
   };
 
@@ -85,10 +87,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
-  const handleSimulatePayment = (ref?: string) => {
+  const handleSimulatePayment = (forcedRef?: string) => {
+    setValidationError(null);
+
+    const refToValidate = forcedRef || transactionRef;
+    const validation = validatePaymentReference(
+      refToValidate,
+      selectedMethod,
+      payerName,
+      payerPhone
+    );
+
+    if (!validation.isValid) {
+      setValidationError(validation.errorMessage || 'Invalid transaction confirmation reference.');
+      return;
+    }
+
     setIsSubmitting(true);
-    const methodPrefix = selectedMethod === 'telebirr' ? 'TB' : selectedMethod === 'cbe' ? 'CBE' : 'ET';
-    const finalRef = ref || transactionRef.trim() || `${methodPrefix}-${Date.now().toString().slice(-7)}`;
+    const finalRef = validation.cleanedRef || refToValidate.trim();
 
     setTimeout(() => {
       setIsSubmitting(false);
@@ -170,7 +186,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               }`}
             >
               <Landmark className="w-3.5 h-3.5" />
-              <span>Ethiopia (100 Birr)</span>
+              <span>Ethiopia (1,000 Birr)</span>
             </button>
 
             <button
@@ -185,23 +201,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               }`}
             >
               <Globe className="w-3.5 h-3.5" />
-              <span>International / Foreigners ($1.00 USD)</span>
+              <span>International / Foreigners ($10.00 USD)</span>
             </button>
           </div>
 
           {/* Pricing Highlight Card */}
           <div className="bg-slate-950 border border-teal-500/30 rounded-xl p-4 flex items-center justify-between">
             <div>
-              <span className="text-xs text-slate-400 font-medium">One-Time Registration Fee</span>
+              <span className="text-xs text-slate-400 font-medium">One-Time Registration Fee (Individual Pro)</span>
               <div className="text-2xl font-black text-white flex items-baseline gap-1 mt-0.5">
                 {selectedCurrency === 'ETB' ? (
                   <>
-                    <span className="text-teal-400">100</span>
+                    <span className="text-teal-400">1,000</span>
                     <span className="text-xs text-slate-400 font-normal">ETB (Birr)</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-teal-400">$1.00</span>
+                    <span className="text-teal-400">$10.00</span>
                     <span className="text-xs text-slate-400 font-normal">USD</span>
                   </>
                 )}
@@ -438,7 +454,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       <QrCode className="w-32 h-32 text-slate-900" />
                     </div>
                     <span className="text-slate-900 font-bold text-xs mt-2">Scan with Telebirr App</span>
-                    <span className="text-slate-600 text-[10px]">Recipient: Dawid Aliyi (0982852778) • 100 ETB</span>
+                    <span className="text-slate-600 text-[10px]">Recipient: Dawid Aliyi (0982852778) • 1,000 ETB</span>
                   </div>
                 )}
                 <p className="text-[11px] text-slate-400">{paymentAccounts.telebirr.instructions}</p>
@@ -468,7 +484,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-300 font-semibold">Step 3: Amount</span>
-                    <span className="font-mono text-emerald-400 font-bold text-xs">100 ETB</span>
+                    <span className="font-mono text-emerald-400 font-bold text-xs">1,000 ETB</span>
                   </div>
                 </div>
               </div>
@@ -492,16 +508,32 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
 
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Chapa directs you to a unified checkout screen where you can authenticate using your Telebirr PIN, CBE Birr, or debit card.
+                  Chapa directs you to a unified checkout screen where you can authenticate using your Telebirr PIN, CBE Birr, or debit card for <strong>1,000 ETB</strong>.
                 </p>
+
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Supported via Chapa:</span>
+                  <div className="flex flex-wrap gap-1.5 text-[10px] text-emerald-300">
+                    <span>✓ Telebirr</span>
+                    <span>✓ CBE Birr</span>
+                    <span>✓ Awash Birr</span>
+                    <span>✓ Amole</span>
+                    <span>✓ Bank of Abyssinia</span>
+                    <span>✓ Domestic &amp; Global Cards</span>
+                  </div>
+                </div>
 
                 <button
                   type="button"
-                  onClick={() => handleSimulatePayment(`CHAPA-${Date.now().toString().slice(-8)}`)}
+                  onClick={() => {
+                    // Pre-fill Chapa reference prompt
+                    const chapaRef = `CHP-${Date.now().toString().slice(-8)}`;
+                    setTransactionRef(chapaRef);
+                  }}
                   className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-teal-600 hover:from-sky-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow cursor-pointer"
                 >
                   <Zap className="w-4 h-4" />
-                  <span>Launch Instant Chapa 100 ETB Checkout</span>
+                  <span>Generate Chapa 1,000 ETB Payment Session</span>
                 </button>
               </div>
             )}
@@ -516,7 +548,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     <h4 className="text-sm font-bold text-white">
                       {selectedMethod === 'awash' ? 'Awash Bank Transfer' : 'Dashen Bank / Amole Transfer'}
                     </h4>
-                    <p className="text-xs text-slate-400">Mobile banking or branch deposit</p>
+                    <p className="text-xs text-slate-400">Mobile banking or branch deposit (1,000 ETB)</p>
                   </div>
                 </div>
 
@@ -529,7 +561,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       {selectedMethod === 'awash' ? paymentAccounts.awash.accountNumber : paymentAccounts.dashen.accountNumber}
                     </span>
                     <span className="text-[11px] text-slate-300 block mt-0.5">
-                      Account Name: <strong>Dawid Aliyi</strong>
+                      Account Name: <strong>Dawid Aliyi</strong> • Amount: <strong>1,000 ETB</strong>
                     </span>
                   </div>
 
@@ -553,21 +585,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-white">International Visa / Mastercard / PayPal</h4>
-                    <p className="text-xs text-slate-400">Global Subsidized Medical Rate: $1.00 USD</p>
+                    <p className="text-xs text-slate-400">Global Subsidized Medical Rate: $10.00 USD</p>
                   </div>
                 </div>
 
                 <p className="text-xs text-slate-300">
-                  Global students and clinical pharmacists outside Ethiopia can activate full lifetime Pro access for <strong>$1.00 USD</strong>.
+                  Global students and clinical pharmacists outside Ethiopia can activate full lifetime Pro access for <strong>$10.00 USD</strong>.
                 </p>
 
                 <button
                   type="button"
-                  onClick={() => handleSimulatePayment(`INT-CARD-${Date.now().toString().slice(-8)}`)}
+                  onClick={() => {
+                    const intRef = `PAYID-${Date.now().toString().slice(-8)}`;
+                    setTransactionRef(intRef);
+                  }}
                   className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow cursor-pointer"
                 >
                   <Globe className="w-4 h-4" />
-                  <span>Pay $1.00 USD with International Card</span>
+                  <span>Initiate $10.00 USD International Card / PayPal Settlement</span>
                 </button>
               </div>
             )}
@@ -578,19 +613,23 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl p-3 text-teal-300 text-xs flex items-center gap-2">
               <Zap className="w-4 h-4 text-teal-400 shrink-0" />
               <span>
-                <strong>Automatic Cross-Platform Registration:</strong> Once payment is confirmed, your account is automatically created, verified, and linked between the Official Website and App Workstation.
+                <strong>Automatic Cross-Platform Registration:</strong> Once 1,000 ETB / $10 USD payment reference is validated, your Pro membership is instantly activated across all platform workstations.
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-slate-300 font-semibold block mb-1">
-                  Practitioner / Member Name:
+                  Practitioner / Member Name *:
                 </label>
                 <input
                   type="text"
+                  required
                   value={payerName}
-                  onChange={(e) => setPayerName(e.target.value)}
+                  onChange={(e) => {
+                    setPayerName(e.target.value);
+                    if (validationError) setValidationError(null);
+                  }}
                   placeholder="e.g. Pharmacist Dawid Aliyi"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-teal-500"
                 />
@@ -598,12 +637,16 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
               <div>
                 <label className="text-slate-300 font-semibold block mb-1">
-                  Phone Number (Telebirr / CBE):
+                  Phone Number (Telebirr / CBE) *:
                 </label>
                 <input
                   type="text"
+                  required
                   value={payerPhone}
-                  onChange={(e) => setPayerPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPayerPhone(e.target.value);
+                    if (validationError) setValidationError(null);
+                  }}
                   placeholder="e.g. 0982852778"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-teal-500"
                 />
@@ -612,41 +655,48 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
             <div>
               <label className="text-slate-300 font-semibold block mb-1">
-                Bank / Telebirr Transaction Reference Number:
+                Bank / Telebirr / Chapa Transaction Reference Number *:
               </label>
               <input
                 type="text"
+                required
                 value={transactionRef}
-                onChange={(e) => setTransactionRef(e.target.value)}
-                placeholder="e.g. FT262900367XYZ, TB-9281928, or CBE Confirmation SMS"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-teal-500"
+                onChange={(e) => {
+                  setTransactionRef(e.target.value);
+                  if (validationError) setValidationError(null);
+                }}
+                placeholder="e.g. FT262900367XYZ, TB-9281928, or CHP-891241"
+                className={`w-full bg-slate-950 border rounded-xl px-4 py-2.5 text-white text-xs font-mono placeholder-slate-500 outline-none transition ${
+                  validationError ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-700 focus:border-teal-500'
+                }`}
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Validation Error Banner */}
+            {validationError && (
+              <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-rose-200">Compulsory Payment Verification Notice</p>
+                  <p className="text-[11px] text-rose-300/90 leading-tight mt-0.5">{validationError}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
               >
                 {isSubmitting ? (
-                  <span>Validating Reference...</span>
+                  <span>Validating Settlement (1,000 ETB / $10 USD)...</span>
                 ) : (
                   <>
                     <ShieldCheck className="w-4 h-4" />
-                    <span>Verify Reference & Unlock Pro Access</span>
+                    <span>Verify Reference &amp; Unlock Individual Pro (1,000 ETB / $10 USD)</span>
                   </>
                 )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSimulatePayment("1-CLICK-VERIFIED-DEMO")}
-                className="py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 border border-amber-500/30"
-                title="Instant Free Test Unlock"
-              >
-                <KeyRound className="w-3.5 h-3.5" />
-                <span>Instant Test Pass</span>
               </button>
             </div>
           </form>

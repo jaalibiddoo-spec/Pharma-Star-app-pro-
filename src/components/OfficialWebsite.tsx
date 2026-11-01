@@ -7,7 +7,7 @@ import {
   Building2, BookMarked, ExternalLink, ArrowRight, Star, 
   HelpCircle, Copy, Check, HeartHandshake, PhoneCall, Mail,
   Layers, Cpu, Play, Search, GraduationCap, ShieldAlert, Zap,
-  FileCheck2, FileScan, AlertTriangle, Calculator
+  FileCheck2, FileScan, AlertTriangle, Calculator, Package
 } from 'lucide-react';
 import { coursesData } from '../data/coursesData';
 import { Language, User } from '../types';
@@ -453,6 +453,48 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
                 </p>
                 <div className="text-[11px] text-indigo-300 font-semibold flex items-center gap-1 pt-1">
                   <span>Explore Drug Compendium &amp; DIS</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Card 9: DAGU 2.0 eLMIS (Ethiopian Standard) */}
+              <div 
+                onClick={() => onLaunchApp('dagu_elmis')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold">
+                    <Package className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded font-mono">EPSS &amp; MoH IPLS</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-emerald-300 transition">DAGU 2.0 eLMIS (Ethiopian Standard)</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Facility stockcards, bin cards, 11-column Bimonthly RRF to EPSS Hubs, IFRR dispensary orders, physical count variance, FEFO matrix, and 2°C-8°C cold chain log.
+                </p>
+                <div className="text-[11px] text-emerald-300 font-semibold flex items-center gap-1 pt-1">
+                  <span>Open DAGU 2.0 Facility Logistics</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Card 10: Auditable Pharmaceutical Transactions & Ledger */}
+              <div 
+                onClick={() => onLaunchApp('pharma_transactions')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-teal-500/10 text-teal-300 px-2 py-0.5 rounded font-mono">SHA-256 Chained</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-teal-300 transition">Auditable Pharma Transactions</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Cryptographically verified hospital transaction ledger, Model 19 (GRV) receiving, Model 22 (SIV) issuing, batch-level recalls, and compliance printouts.
+                </p>
+                <div className="text-[11px] text-teal-300 font-semibold flex items-center gap-1 pt-1">
+                  <span>Audit Pharmaceutical Ledger</span>
                   <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>

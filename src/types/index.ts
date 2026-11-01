@@ -3,7 +3,7 @@ export type Language = 'en' | 'am' | 'om' | 'fr' | 'ar' | 'es';
 export interface PaymentRecord {
   id: string;
   transactionRef: string; // CBE Ref or Telebirr Txn
-  paymentMethod: 'CBE Birr' | 'Telebirr' | 'Awash Bank' | 'PayPal / Card' | 'Direct Agent';
+  paymentMethod: 'CBE Birr' | 'Telebirr' | 'Awash Bank' | 'PayPal / Card' | 'Direct Agent' | 'CBE Bank Transfer' | 'Telebirr Mobile Money' | 'CBE Birr USSD' | 'Chapa Gateway' | 'International Card / PayPal' | string;
   amountETB: number;
   serviceName: string;
   serviceId: string; // e.g. 'exit_exam', 'ngat', 'wholesaler_quarterly', 'registration', 'cpd_certificate', etc.
@@ -767,3 +767,230 @@ export interface ExitExamQuestion {
   stgReference: string;
   difficulty: 'Standard Exit Exam' | 'High-Yield Board Level';
 }
+
+export interface PatientRenalLabSync {
+  patientId?: string;
+  patientName: string;
+  age: number;
+  gender: 'Male' | 'Female';
+  weightKg: number;
+  heightCm?: number;
+  serumCreatinine: number;
+  calculatedCrCl: number;
+  ckdStage: string;
+  source: 'Lab Interpreter' | 'Inpatient EHR' | 'Manual Input';
+  lastUpdated: string;
+}
+
+export type PharmaTransactionType = 
+  | 'dispense_prescription'
+  | 'dispense_controlled_narcotic'
+  | 'procurement_grv'
+  | 'store_issue_siv'
+  | 'disposal_destruction'
+  | 'inter_facility_transfer'
+  | 'supplier_return';
+
+export interface AuditablePharmaTransaction {
+  id: string;
+  transactionRef: string;
+  type: PharmaTransactionType;
+  typeLabel: string;
+  date: string;
+  timestamp: string;
+  medicineName: string;
+  brandName?: string;
+  strength: string;
+  dosageForm: string;
+  batchNumber: string;
+  expiryDate: string;
+  quantity: number;
+  packSize: string;
+  unitPriceETB: number;
+  totalAmountETB: number;
+  paymentMethod?: 'Cash' | 'CBE Birr' | 'Telebirr' | 'Hospital Credit / CBHI' | 'Free MoH Program';
+  paymentReference?: string;
+  isControlledSubstance: boolean;
+  controlledSchedule?: 'Schedule II (Narcotics)' | 'Schedule III (Psychotropics)' | 'Schedule IV (Sedatives)' | 'Special Prescription';
+  prescriberName?: string;
+  prescriberLicenseNo?: string;
+  patientName?: string;
+  patientMRN?: string;
+  prescriptionSlipNo?: string;
+  departmentFrom: string;
+  departmentTo: string;
+  supplierOrPartner?: string;
+  stockBefore: number;
+  stockAfter: number;
+  authorizedByStaff: string;
+  staffRole: 'Chief Pharmacist' | 'Clinical Pharmacist' | 'Druggist' | 'Store Manager' | 'Hospital Auditor' | 'EFDA Inspector';
+  staffLicenseNo: string;
+  witnessStaffName?: string;
+  verificationHash: string;
+  auditStatus: 'verified_immutable' | 'audited_passed' | 'discrepancy_flagged' | 'counter_signed';
+  disposalCertificateNo?: string;
+  disposalMethod?: 'High-Temperature Incineration' | 'Chemical Neutralization' | 'Encapsulation / Landfill';
+  notes: string;
+}
+
+// =========================================================================
+// DAGU 2.0 eLMIS (Ethiopian Standard) Logistics Management Information System Types
+// =========================================================================
+
+export interface DaguRRFLineItem {
+  id: string;
+  itemCode: string;
+  description: string;
+  strength: string;
+  dosageForm: string;
+  unitOfIssue: string;
+  programType: 'RDF / CBHI' | 'HIV/ART' | 'TB/Leprosy' | 'Malaria' | 'MCH/FP' | 'EPI/Cold Chain';
+  venCategory: 'V' | 'E' | 'N';
+  beginningBalance: number;
+  quantityReceived: number;
+  quantityIssued: number;
+  lossesAndAdjustments: number;
+  endingBalance: number; // Physical count
+  daysOutOfStock: number;
+  calculatedAMC: number;
+  maxStockQuantity: number; // 4 * AMC (Ethiopian National Standard)
+  suggestedOrderQuantity: number; // max(0, Max Stock - Ending Balance)
+  confirmedOrderQuantity: number;
+  remarks: string;
+}
+
+export interface DaguRRFReport {
+  id: string;
+  reportNumber: string;
+  facilityName: string;
+  facilityCode: string;
+  facilityType: 'Specialized Hospital' | 'General Hospital' | 'Primary Hospital' | 'Health Center';
+  epssHub: string;
+  reportingPeriod: string;
+  datePrepared: string;
+  submissionDeadline: string;
+  program: 'All Programs (Integrated IPLS)' | 'RDF' | 'HIV/ART' | 'TB/Leprosy' | 'Malaria' | 'MCH/FP' | 'EPI Vaccines';
+  items: DaguRRFLineItem[];
+  storekeeperSign: {
+    name: string;
+    role: string;
+    licenseNo: string;
+    signedAt: string;
+  };
+  pharmacyHeadSign: {
+    name: string;
+    role: string;
+    licenseNo: string;
+    signedAt: string;
+  };
+  medicalDirectorSign: {
+    name: string;
+    title: string;
+    signedAt: string;
+  };
+  status: 'draft' | 'validated' | 'submitted_to_epss' | 'acknowledged_by_hub';
+  epssVoucherRef?: string;
+  epssReceiptTimestamp?: string;
+}
+
+export interface DaguColdChainLog {
+  id: string;
+  date: string;
+  time: '08:00 AM' | '04:00 PM';
+  refrigeratorName: string;
+  temperatureC: number;
+  targetRange: '2°C - 8°C';
+  status: 'normal' | 'low_alarm' | 'high_alarm';
+  loggedBy: string;
+  actionTaken?: string;
+}
+
+export interface DaguPhysicalCountVariance {
+  id: string;
+  countDate: string;
+  itemCode: string;
+  drugName: string;
+  unitOfIssue: string;
+  systemSOH: number;
+  physicalCount: number;
+  varianceQty: number; // physical - system
+  unitCostETB: number;
+  varianceValueETB: number;
+  reason: 'Dispensing Counting Discrepancy' | 'Unrecorded Breakage / Spillage' | 'Near Expiry Removal' | 'Suspected Theft / Pilferage' | 'Unrecorded Transfer / Return';
+  action: 'Ledger Adjusted' | 'Investigation Ordered' | 'Audit Flagged';
+  auditedBy: string;
+}
+
+// ==========================================
+// ABC ANALYSIS, VEN ANALYSIS & FSML TYPES
+// ==========================================
+
+export type AbcClass = 'A' | 'B' | 'C';
+export type VenClass = 'V' | 'E' | 'N';
+export type AbcVenMatrixCell = 'AV' | 'BV' | 'CV' | 'AE' | 'BE' | 'CE' | 'AN' | 'BN' | 'CN';
+export type PriorityTier = 'Category I (High)' | 'Category II (Medium)' | 'Category III (Low / Scrutinize)';
+export type HospitalFacilityTier = 'Primary' | 'General' | 'Specialized';
+
+export interface AbcVenMedicineItem {
+  id: string;
+  itemCode: string;
+  genericName: string;
+  brandAliases?: string;
+  strength: string;
+  dosageForm: string;
+  unitOfIssue: string;
+  therapeuticCategory: string;
+  annualConsumption: number;
+  unitCostETB: number;
+  totalCostETB: number;
+  percentOfTotalSpend: number;
+  cumulativeCostETB: number;
+  cumulativePercent: number;
+  cumulativeItemPercent: number;
+  itemRank: number;
+  abcClass: AbcClass;
+  venClass: VenClass;
+  matrixCategory: AbcVenMatrixCell;
+  priorityTier: PriorityTier;
+  levelOfUse: HospitalFacilityTier;
+  prescriberRestriction: 'Health Officer / Druggist' | 'General Medical Practitioner' | 'Specialist / Senior Consultant' | 'Sub-Specialist / Oncologist';
+  nemlStatus: 'Core NEML' | 'Complementary' | 'Non-NEML (Facility Specific)';
+  dtcApproved: boolean;
+  clinicalRationale: string;
+  budgetActionRecommendation: string;
+}
+
+export interface FacilityMedicineItem {
+  id: string;
+  inn: string;
+  strengthForm: string;
+  therapeuticCategory: string;
+  subCategory: string;
+  levelOfUse: HospitalFacilityTier;
+  prescriberLevel: string;
+  venCategory: VenClass;
+  nemlStatus: 'Core NEML' | 'Complementary' | 'Facility Specific Exception';
+  efdaRegistrationStatus: 'Registered' | 'EUL / Fast-Track' | 'Special Import Waiver';
+  maxPrescriptionDays: number;
+  dtcApprovalStatus: 'Approved' | 'Conditional' | 'Restricted' | 'Under Review';
+  stgIndication: string;
+  rationale: string;
+  lastReviewedDate: string;
+  leadReviewer: string;
+}
+
+export interface DtcReportMetadata {
+  facilityName: string;
+  facilityLevel: HospitalFacilityTier | 'Health Center';
+  region: string;
+  dtcChairperson: string;
+  chiefPharmacist: string;
+  clinicalDirector: string;
+  hospitalCeo: string;
+  fiscalYear: string;
+  meetingDate: string;
+  meetingResolutionNumber: string;
+  totalAnnualBudgetETB: number;
+  allocatedBudgetETB: number;
+}
+
