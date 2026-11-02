@@ -286,7 +286,7 @@ export default function App() {
           {/* CBE & Registration Fee info */}
           <div className="flex items-center gap-3">
             <span className="text-slate-400 hidden md:inline">
-              Registration: <strong className="text-teal-300">100 Birr</strong> (CBE: <strong className="text-white font-mono">1000262900367</strong> Dawid Aliyi) or <strong className="text-teal-300">$1 USD</strong>
+              Registration: <strong className="text-teal-300">1,000 Birr</strong> (CBE: <strong className="text-white font-mono">1000262900367</strong> Dawid Aliyi) or <strong className="text-teal-300">$10 USD (Chapa)</strong>
             </span>
 
             <button

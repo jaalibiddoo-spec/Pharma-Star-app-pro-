@@ -939,7 +939,7 @@ export interface AbcVenMedicineItem {
   strength: string;
   dosageForm: string;
   unitOfIssue: string;
-  therapeuticCategory: string;
+  therapeuticCategory?: string;
   annualConsumption: number;
   unitCostETB: number;
   totalCostETB: number;

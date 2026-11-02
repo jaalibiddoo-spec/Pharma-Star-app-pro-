@@ -152,5 +152,26 @@ export const guidelinesData: Guideline[] = [
     sourceUrlName: "ginasthma.org",
     offlineCached: true,
     downloadSize: "8.9 MB"
+  },
+  {
+    id: "guide-telepharmacy-eth-9",
+    title: "National Telemedicine & Telepharmacy Practice Directive & Operational Standards",
+    authority: "EFDA & Federal Ministry of Health (MoH Ethiopia)",
+    jurisdiction: "National (Ethiopia)",
+    year: "2026",
+    status: "Directive No. 62/2026",
+    category: "Telehealth / Digital Pharmacy",
+    summary: "Official regulatory standard establishing legal boundaries, clinical protocols, electronic prescribing, remote dispensing supervision, and patient data confidentiality across Ethiopian digital healthcare.",
+    keyPoints: [
+      "Scope of Telepharmacy: Remote Medication Therapy Management (MTM), digital patient counseling, clinical review of electronic prescriptions, and remote verification of rural health center dispensing by licensed B.Pharm clinical pharmacists.",
+      "Licensure & Verification: Tele-practitioners must hold an active EFDA license with verified regional MoH registration; consultations must capture clinician license numbers on all tele-prescriptions.",
+      "Electronic Prescription Safety Rules: Controlled narcotic/psychotropic substances (Formularies A & B) are strictly prohibited from initial tele-prescribing; digital prescriptions require two-factor pharmacist validation and tamper-evident audit trails.",
+      "Informed Tele-Consent & Data Governance: Clinicians must obtain documented verbal/electronic consent explaining remote limitations; audio-video recordings and patient chat logs must comply with FDRE Health Data Confidentiality laws.",
+      "Medication Delivery & Cold Chain Integrity: Remote pharmacy fulfillment must ensure validated cold-chain packaging (2°C - 8°C for biologics/insulin) with courier tracking and proof of patient identity at delivery point.",
+      "Emergency Triage Escalation: Immediate protocolized referral to physical tertiary emergency departments (e.g. Tikur Anbessa, St. Paul's, Jimma JMC) for red-flag symptoms (anaphylaxis, acute chest pain, altered consciousness)."
+    ],
+    sourceUrlName: "moh.gov.et / efda.gov.et / Telehealth Directorate",
+    offlineCached: true,
+    downloadSize: "6.2 MB"
   }
 ];

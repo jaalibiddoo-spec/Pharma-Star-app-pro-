@@ -7,7 +7,8 @@ import {
   Building2, BookMarked, ExternalLink, ArrowRight, Star, 
   HelpCircle, Copy, Check, HeartHandshake, PhoneCall, Mail,
   Layers, Cpu, Play, Search, GraduationCap, ShieldAlert, Zap,
-  FileCheck2, FileScan, AlertTriangle, Calculator, Package
+  FileCheck2, FileScan, AlertTriangle, Calculator, Package, Scale,
+  Share2
 } from 'lucide-react';
 import { coursesData } from '../data/coursesData';
 import { Language, User } from '../types';
@@ -36,7 +37,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
   currentUser
 }) => {
   const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
-  const [activeFeatureTab, setActiveFeatureTab] = useState<'cpd' | 'courses' | 'store_ifrr' | 'prescriptions' | 'research' | 'moa3d' | 'clinical' | 'consult' | 'offline'>('cpd');
+  const [activeFeatureTab, setActiveFeatureTab] = useState<'cpd' | 'courses' | 'abc_ven' | 'dtp_interventions' | 'store_ifrr' | 'prescriptions' | 'research' | 'moa3d' | 'clinical' | 'consult' | 'offline'>('cpd');
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(0);
 
   const copyToClipboard = (text: string, label: string) => {
@@ -46,11 +47,13 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
   };
 
   const featureTabs = [
-    { id: 'cpd', title: 'EFDA CPD Credits', icon: Award, subtitle: 'Accredited annual license renewal' },
+    { id: 'cpd', title: 'EFDA CPD & Cycle Status', icon: Award, subtitle: 'Directive No. 49/2022 renewal audit' },
+    { id: 'abc_ven', title: 'ABC & VEN Analysis (DTC)', icon: Scale, subtitle: 'Pareto 80/20 & FSML Master PDF' },
+    { id: 'dtp_interventions', title: 'DTP Reports & SBAR', icon: AlertTriangle, subtitle: 'Quick export & clinical report' },
     { id: 'courses', title: '12 Courses + Gemini AI', icon: BookOpen, subtitle: 'First course free for everyone!' },
-    { id: 'prescriptions', title: 'Prescription Review & Institutions', icon: FileCheck2, subtitle: '2,000 ETB/yr site network' },
-    { id: 'research', title: 'Research Publishing', icon: BookMarked, subtitle: '1,000 ETB for institutions' },
+    { id: 'prescriptions', title: 'Prescription Review & Sites', icon: FileCheck2, subtitle: '2,000 ETB/yr site network' },
     { id: 'store_ifrr', title: 'Hospital Store & IFRR', icon: Building2, subtitle: 'Bin cards & email store man' },
+    { id: 'research', title: 'Research Publishing', icon: BookMarked, subtitle: '1,000 ETB for institutions' },
     { id: 'moa3d', title: '3D Molecular MOA', icon: Video, subtitle: 'Interactive Three.js simulations' },
     { id: 'clinical', title: 'Clinical Decision Engine', icon: Pill, subtitle: 'Interactions, labs & SOAP' },
     { id: 'consult', title: '1-on-1 Consultations', icon: MessageSquare, subtitle: 'Direct reviews with Dawid' },
@@ -64,7 +67,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
     },
     {
       q: 'What payment methods are supported in Ethiopia and internationally?',
-      a: 'We support all major Ethiopian domestic payment channels: Telebirr (0982852778 - Dawid Aliyi), Commercial Bank of Ethiopia (CBE account: 1000262900367 - Dawid Aliyi), and CBE Birr (*847#). For international professionals and members of the Ethiopian diaspora, secure payments in USD ($1.00 USD) and Chapa are supported.'
+      a: 'We support all major Ethiopian domestic payment channels: Telebirr (0982852778 - Dawid Aliyi), Commercial Bank of Ethiopia (CBE account: 1000262900367 - Dawid Aliyi), and CBE Birr (*847#). For automated instant online checkout and international professionals, secure payments via Chapa and global USD cards ($10.00 USD) are supported.'
     },
     {
       q: 'Can Pharma Star App Pro run in rural health centers without internet access?',
@@ -112,7 +115,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
                 className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-[11px] transition cursor-pointer flex items-center gap-1"
               >
                 <Zap className="w-3 h-3 text-amber-400" />
-                <span>Auto-Register (100 Birr)</span>
+                <span>Auto-Register (1,000 Birr / $10 USD)</span>
               </button>
             )}
 
@@ -234,7 +237,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
                 className="px-5 py-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-sm transition flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-amber-400" />
-                <span>Get Pro (100 Birr / $1)</span>
+                <span>Get Pro (1,000 Birr / $10 USD)</span>
               </button>
             </div>
 
@@ -498,6 +501,27 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
                   <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
+
+              {/* Card 11: ABC & VEN Analysis & Facility-Specific Medicine List (DTC) */}
+              <div 
+                onClick={() => onLaunchApp('abc_ven_analysis')}
+                className="group p-4 bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-2xl cursor-pointer transition shadow-sm space-y-2 md:col-span-2 lg:col-span-1"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
+                    <Scale className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded font-mono">DTC 9-Cell Matrix</span>
+                </div>
+                <h4 className="font-bold text-white text-sm group-hover:text-amber-300 transition">ABC/VEN Analysis &amp; FSML Master</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Pareto 80/20 cumulative spend analysis, Vital/Essential/Non-Essential clinical triage, 9-cell budget matrix, and MoH/DTC Facility-Specific Medicine List PDF dossier.
+                </p>
+                <div className="text-[11px] text-amber-300 font-semibold flex items-center gap-1 pt-1">
+                  <span>Launch ABC-VEN &amp; FSML Suite</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -542,54 +566,265 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
           {activeFeatureTab === 'cpd' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
               <div className="space-y-4">
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  MoH & EFDA Annual License Renewal
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    MoH &amp; EFDA Directive No. 49/2022
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-300 border border-teal-500/30">
+                    Live Status API &amp; CI Pipeline
+                  </span>
+                </div>
                 <h3 className="text-2xl font-bold text-white">
-                  Continuing Professional Development (CPD) Credit Modules & Certificates
+                  Continuing Professional Development (CPD) &amp; License Cycle Tracking
                 </h3>
                 <p className="text-slate-300 text-sm leading-relaxed">
-                  In Ethiopia and across Africa, practicing pharmacists and druggists are required by the Ministry of Health (MoH) and EFDA to earn CPD points to renew their annual practicing licenses.
+                  In Ethiopia, practicing pharmacists, druggists, and clinicians are required by the Ministry of Health (MoH) and EFDA to complete accredited CPD units during their active license window for annual re-registration.
                 </p>
                 <ul className="space-y-2 text-xs text-slate-300">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                    <span><strong>10 Accredited Modules:</strong> Pharmacotherapy, Clinical Toxicology, Biopharmaceutics, Pharmacokinetics, and more.</span>
+                    <span><strong>Federal Cap Rules Enforced:</strong> 15-CEU maximum single course ceiling, mandatory 5-CEU ethics quota, and 30-CEU total annual threshold.</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                    <span><strong>Comprehensive End-of-Module Quiz:</strong> 10 rigorous clinical scenario questions (80% pass score required).</span>
+                    <span><strong>No-Rollover Cycle Verification:</strong> Automated live verification endpoint (<code className="bg-slate-950 px-1 py-0.5 rounded text-amber-300 font-mono">/api/users/:userId/cpd-status</code>) tracking active operational dates.</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                    <span><strong>Verifiable PDF Certificates:</strong> Embedded unique serial numbers & QR verification codes (200 to 500 ETB per certificate).</span>
+                    <span><strong>Official Verifiable Certificates:</strong> Instant high-resolution printable PDF certificates with tamper-proof QR code hashes and Ministry serials (200 to 500 ETB).</span>
                   </li>
                 </ul>
                 <div className="pt-2 flex flex-wrap items-center gap-3">
                   <button
                     onClick={() => onLaunchApp('cpd_modules')}
-                    className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs transition flex items-center gap-2 cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs transition flex items-center gap-2 cursor-pointer shadow-lg shadow-teal-500/20"
                   >
                     <Award className="w-4 h-4" />
-                    <span>Go to CPD Hub</span>
+                    <span>Launch CPD Hub &amp; Status Tracker</span>
                   </button>
                   <span className="text-xs text-slate-400">Pay via Telebirr: <strong>0982852778</strong></span>
                 </div>
               </div>
 
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-2 font-semibold">Live Certificate Preview</div>
-                <div className="bg-gradient-to-br from-slate-900 to-teal-950/40 border border-teal-500/30 rounded-xl p-5 space-y-3">
-                  <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                    <div className="font-bold text-white text-sm">ETHIOPIAN HEALTHCARE ACCREDITATION</div>
-                    <span className="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded font-mono">15 CPD PTS</span>
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 relative overflow-hidden space-y-4">
+                <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider font-semibold">
+                  <span>Directive No. 49/2022 Cycle Monitor</span>
+                  <span className="text-emerald-400 font-mono font-bold">2026 CYCLE ACTIVE</span>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Annual Quota Progress:</span>
+                    <span className="font-mono text-teal-300 font-bold">26 / 30 CEUs (87%)</span>
                   </div>
-                  <div className="text-xs text-slate-300">This certifies that the candidate has completed:</div>
-                  <div className="text-sm font-bold text-teal-300">Advanced Pharmacotherapy & Patient-Centered Care</div>
-                  <div className="text-[11px] text-slate-400 flex justify-between pt-2 border-t border-slate-800">
-                    <span>Accreditor: MoH / EFDA Aligned</span>
-                    <span className="font-mono text-amber-300">EFDA-CPD-2026-9812</span>
+                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full w-[87%]" />
                   </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-[11px]">
+                    <div>
+                      <span className="text-slate-500 block">Ethics Quota:</span>
+                      <span className="font-bold text-emerald-400">6 / 5 CEUs (Met ✓)</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">Remaining Shortfall:</span>
+                      <span className="font-bold text-amber-400">4 CEUs Needed</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">Ceiling Constraint:</span>
+                      <span className="text-slate-300">Max 15 CEU / Activity</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">Renewal Status:</span>
+                      <span className="font-bold text-teal-300">Audit in Progress</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                  <ShieldCheck className="w-4 h-4 text-teal-400 shrink-0" />
+                  <span>Validated by automated CI regulatory test pipeline &amp; PostgreSQL persistence.</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeFeatureTab === 'abc_ven' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    Hospital DTC Master Suite
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-300 border border-teal-500/30">
+                    WHO &amp; MoH Protocol
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold text-white">
+                  ABC &amp; VEN Spend Analysis &amp; Facility-Specific Medicine List (FSML)
+                </h3>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Equip Hospital Drug and Therapeutics Committees (DTC) with automated Pareto 80/20 spend classification, Vital/Essential/Non-Essential (VEN) clinical triage, and an interactive 9-cell budget matrix ($AV, BV, CV, AE, BE, CE, AN, BN, CN$) to safeguard vital medicines during pharmaceutical budget deficits.
+                </p>
+                <ul className="space-y-2 text-xs text-slate-300">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <span><strong>Pareto 80/20 Expenditure Curve:</strong> Real-time ranked cumulative cost engine isolating Category A drivers (70-80% hospital budget).</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <span><strong>9-Cell Strategic Matrix:</strong> Deficit simulator with rational substitution, price re-negotiation, and non-essential deprescribing algorithms.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <span><strong>Official DTC Resolution Dossier (Printable PDF):</strong> Complete hospital committee resolution with 4-tier signature blocks (DTC Chair, Chief Pharmacist, Clinical Director, CEO).</span>
+                  </li>
+                </ul>
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() => onLaunchApp('abc_ven_analysis')}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-extrabold text-xs transition flex items-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20"
+                  >
+                    <Scale className="w-4 h-4" />
+                    <span>Launch ABC/VEN Analysis &amp; FSML Suite</span>
+                  </button>
+                  <span className="text-xs text-slate-400">Exportable MoH DTC Resolution Format</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-3">
+                <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider font-semibold">
+                  <span>DTC 9-Cell Matrix Distribution</span>
+                  <span className="text-amber-400 font-mono">32 Hospital Pharmaceuticals</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="bg-rose-950/40 border border-rose-500/40 p-2.5 rounded-xl">
+                    <div className="font-bold text-rose-300 text-sm">AV (Cat I)</div>
+                    <div className="text-[10px] text-slate-400">Vital High Spend</div>
+                    <div className="text-xs font-mono text-white font-bold mt-1">45.2% Spend</div>
+                  </div>
+                  <div className="bg-orange-950/40 border border-orange-500/40 p-2.5 rounded-xl">
+                    <div className="font-bold text-orange-300 text-sm">BV (Cat I)</div>
+                    <div className="text-[10px] text-slate-400">Vital Mod Spend</div>
+                    <div className="text-xs font-mono text-white font-bold mt-1">11.8% Spend</div>
+                  </div>
+                  <div className="bg-emerald-950/40 border border-emerald-500/40 p-2.5 rounded-xl">
+                    <div className="font-bold text-emerald-300 text-sm">CV (Cat I)</div>
+                    <div className="text-[10px] text-slate-400">Vital Low Spend</div>
+                    <div className="text-xs font-mono text-white font-bold mt-1">3.1% Spend</div>
+                  </div>
+
+                  <div className="bg-amber-950/40 border border-amber-500/40 p-2.5 rounded-xl">
+                    <div className="font-bold text-amber-300 text-sm">AE (Cat II)</div>
+                    <div className="text-[10px] text-slate-400">Essential High</div>
+                    <div className="text-xs font-mono text-white font-bold mt-1">26.4% Spend</div>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
+                    <div className="font-bold text-slate-300 text-sm">BE (Cat II)</div>
+                    <div className="text-[10px] text-slate-400">Essential Mod</div>
+                    <div className="text-xs font-mono text-white font-bold mt-1">6.5% Spend</div>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
+                    <div className="font-bold text-slate-300 text-sm">CE (Cat II)</div>
+                    <div className="text-[10px] text-slate-400">Essential Low</div>
+                    <div className="text-xs font-mono text-white font-bold mt-1">1.2% Spend</div>
+                  </div>
+
+                  <div className="bg-purple-950/40 border border-purple-500/40 p-2.5 rounded-xl">
+                    <div className="font-bold text-purple-300 text-sm">AN (Cat III)</div>
+                    <div className="text-[10px] text-slate-400">Scrutinize / Cut</div>
+                    <div className="text-xs font-mono text-white font-bold mt-1">4.2% Spend</div>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
+                    <div className="font-bold text-slate-300 text-sm">BN (Cat III)</div>
+                    <div className="text-[10px] text-slate-400">Scrutinize</div>
+                    <div className="text-xs font-mono text-white font-bold mt-1">1.1% Spend</div>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
+                    <div className="font-bold text-slate-300 text-sm">CN (Cat III)</div>
+                    <div className="text-[10px] text-slate-400">Non-Essential</div>
+                    <div className="text-xs font-mono text-white font-bold mt-1">0.5% Spend</div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+                  <span>Priority Tier I (Vitals): Guaranteed 100% Availability</span>
+                  <span className="text-emerald-400 font-bold">12 Medicines (60.1%)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeFeatureTab === 'dtp_interventions' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                    Cipolle, Strand &amp; Morley Standard
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                    New Quick Clinical Sharing
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold text-white">
+                  Drug Therapy Problem (DTP) Identifier &amp; Intervention Reports
+                </h3>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Identify, resolve, and prevent medication problems across the 7 standardized pharmaceutical care categories: Unnecessary Drug, Additional Therapy Needed, Ineffective Drug, Dosage Too Low, Adverse Drug Reaction, Dosage Too High, and Non-Adherence.
+                </p>
+                <ul className="space-y-2 text-xs text-slate-300">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
+                    <span><strong>Quick Export Feature:</strong> Generate clean plain-text clinical handover summaries formatted for rapid sharing across hospital EMRs, WhatsApp/Telegram clinical groups, and morning ward rounds.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
+                    <span><strong>Standardized Intervention Report (Printable PDF):</strong> MoH / DTC letterhead structure with SBAR workup, Cipolle table, and Attending Physician disposition checkboxes.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
+                    <span><strong>Integrated Pharmacist Authentication:</strong> Complete digital verification by Pharmacist Dawid Aliyi, BCPS (EFDA License: EFDA/CLIN/ETH/2026/0491).</span>
+                  </li>
+                </ul>
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() => onLaunchApp('dtp_identifier')}
+                    className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs transition flex items-center gap-2 cursor-pointer shadow-lg shadow-teal-500/20"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Open DTP Identifier &amp; Reports</span>
+                  </button>
+                  <span className="text-xs text-slate-400">Zero-popup in-app printable engine</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-3">
+                <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider font-semibold">
+                  <span>Standardized Clinical Report Preview</span>
+                  <span className="text-teal-400 font-mono">CPIR-2026-ETH</span>
+                </div>
+
+                <div className="bg-white text-slate-900 rounded-xl p-4 text-xs space-y-2 border border-slate-200 shadow-md">
+                  <div className="border-b border-slate-200 pb-1.5 flex justify-between items-center text-[10px] text-teal-800 font-bold uppercase">
+                    <span>MoH Ethiopia • Clinical Pharmacy Service</span>
+                    <span>Ref: CPIR-2026-ETH-982</span>
+                  </div>
+                  <div>
+                    <strong className="text-slate-900">Patient:</strong> 71yo male • Jimma Medical Center Cardiology Ward
+                  </div>
+                  <div className="text-[11px] bg-rose-50 border border-rose-200 p-2 rounded text-rose-900">
+                    <strong>Critical DTP:</strong> Diclofenac 50mg TID causing acute renal vasoconstriction &amp; heart failure decompensation. Action: Discontinue NSAID immediately; switch to IV Furosemide.
+                  </div>
+                  <div className="border-t border-slate-200 pt-1.5 text-[10px] text-slate-600 flex justify-between items-center">
+                    <span>Physician: [X] Accepted as Recommended</span>
+                    <span className="font-semibold text-teal-800">Dawid Aliyi, BCPS</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                  <Share2 className="w-4 h-4 text-teal-400 shrink-0" />
+                  <span>Supports 1-click plain text copying and print-to-PDF formatting without popup blockers.</span>
                 </div>
               </div>
             </div>
@@ -1159,7 +1394,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
               </div>
 
               <p className="text-xs text-slate-400">
-                Send 100 ETB for Lifetime Pro Access or 200–500 ETB for an accredited CPD certificate.
+                Send 1,000 ETB for Lifetime Pro Access or 200–500 ETB for an accredited CPD certificate.
               </p>
             </div>
 
@@ -1254,12 +1489,12 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
 
               <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-1">
                 <div className="text-[11px] text-slate-400">Lifetime Registration:</div>
-                <div className="text-lg font-black text-cyan-300">$1.00 USD</div>
-                <div className="text-xs text-slate-400">Global debit/credit cards accepted</div>
+                <div className="text-lg font-black text-cyan-300">$10.00 USD / 1,000 ETB</div>
+                <div className="text-xs text-slate-400">Chapa gateway &amp; global debit/credit cards accepted</div>
               </div>
 
               <p className="text-xs text-slate-400">
-                Instantly activated for pharmacists, preceptors, and diaspora members worldwide.
+                Instantly activated for pharmacists, preceptors, and diaspora members worldwide via Chapa.
               </p>
             </div>
 
@@ -1268,7 +1503,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
               className="mt-6 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 border border-slate-700 cursor-pointer"
             >
               <CreditCard className="w-4 h-4 text-cyan-400" />
-              <span>Pay Online ($1 USD)</span>
+              <span>Pay Online with Chapa ($10 USD)</span>
             </button>
           </div>
         </div>
@@ -1493,7 +1728,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
               <li>Telebirr: <strong className="text-teal-300 font-mono">0982852778</strong> (Dawid Aliyi)</li>
               <li>CBE: <strong className="text-amber-300 font-mono">1000262900367</strong></li>
               <li>CBE Birr: <strong className="text-white font-mono">*847#</strong></li>
-              <li>Registration Fee: <strong className="text-white">100 Birr / $1.00 USD</strong></li>
+              <li>Registration Fee: <strong className="text-white">1,000 Birr / $10.00 USD (Chapa, Telebirr, CBE)</strong></li>
             </ul>
           </div>
 

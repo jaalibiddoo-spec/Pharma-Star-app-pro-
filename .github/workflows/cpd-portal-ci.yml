@@ -1,0 +1,49 @@
+name: CPD Portal Application CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: cpd_admin
+          POSTGRES_PASSWORD: ${{ secrets.DB_PERSONAL_TOKEN }}
+          POSTGRES_DB: cpd_compliance_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Project Dependencies
+        run: npm ci
+
+      - name: Run Prisma Database Schema Migration
+        run: npx prisma db push
+        env:
+          DATABASE_URL: postgresql://cpd_admin:${{ secrets.DB_PERSONAL_TOKEN }}@localhost:5432/cpd_compliance_test
+
+      - name: Execute Automated Regulatory Testing Suite
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://cpd_admin:${{ secrets.DB_PERSONAL_TOKEN }}@localhost:5432/cpd_compliance_test

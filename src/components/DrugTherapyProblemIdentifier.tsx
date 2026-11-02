@@ -5,7 +5,7 @@ import {
   Search, Sliders, ChevronRight, User, Sparkles, RefreshCw,
   Building2, Activity, HelpCircle, Layers, XCircle,
   AlertOctagon, AlertCircle, ArrowUpDown, SlidersHorizontal, Filter, X,
-  Download
+  Download, Share2, FileDown, Eye
 } from 'lucide-react';
 
 export type DTPSeverityLevel = 'critical' | 'high' | 'medium' | 'low';
@@ -73,6 +73,14 @@ export const DrugTherapyProblemIdentifier: React.FC = () => {
   const [customK, setCustomK] = useState<number>(5.3);
   const [scannedDTPs, setScannedDTPs] = useState<DTPRecord[] | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+
+  // Quick Export and Standardized Clinical Pharmacist Intervention Report Modals
+  const [quickExportModalOpen, setQuickExportModalOpen] = useState<boolean>(false);
+  const [exportSource, setExportSource] = useState<'case' | 'scan'>('case');
+  const [reportModalOpen, setReportModalOpen] = useState<boolean>(false);
+  const [physicianDisposition, setPhysicianDisposition] = useState<'accepted' | 'modified' | 'retained' | 'rejected'>('accepted');
+  const [physicianNotes, setPhysicianNotes] = useState<string>('Reviewed with clinical pharmacist on morning ward rounds. Recommendations endorsed and implemented in prescription chart.');
+  const [copiedQuickText, setCopiedQuickText] = useState<boolean>(false);
 
   const cases: DTPCaseStudy[] = [
     {
@@ -567,6 +575,294 @@ export const DrugTherapyProblemIdentifier: React.FC = () => {
     });
     return counts;
   }, [scannedDTPs]);
+
+  // Unified Export Data Getter for Case Studies & Custom Regimen Scanner
+  const getActiveExportData = (source: 'case' | 'scan') => {
+    if (source === 'case') {
+      const items = displayedCaseDTPs.length > 0 ? displayedCaseDTPs : activeCase.identifiedDTPs;
+      return {
+        isCase: true,
+        title: activeCase.title,
+        patientDemographics: activeCase.patientDemographics,
+        clinicalSetting: activeCase.clinicalSetting,
+        chiefComplaint: activeCase.chiefComplaintAndHPI,
+        pastMedicalHistory: activeCase.pastMedicalHistory,
+        currentMedications: activeCase.currentMedications.map(m => `${m.drug} ${m.dose} ${m.freq} (${m.indication})`),
+        labVitals: activeCase.labVitals,
+        dtps: items,
+        allDtps: activeCase.identifiedDTPs,
+        soap: activeCase.clinicalPharmacistSOAP,
+        reportRef: `CPIR-2026-${activeCase.id.toUpperCase().replace(/[^A-Z0-9]/g, '')}-ETH`
+      };
+    } else {
+      const allScanned = scannedDTPs || [];
+      const items = (displayedScannedDTPs && displayedScannedDTPs.length > 0) ? displayedScannedDTPs : allScanned;
+      return {
+        isCase: false,
+        title: 'Custom Regimen Audit & Pharmacotherapy Workup',
+        patientDemographics: `${customPatientAge}-year-old patient • Evaluated via Clinical Decision Engine`,
+        clinicalSetting: 'Inpatient / Outpatient Clinical Pharmacy Consultation Service',
+        chiefComplaint: `Clinical medication regimen safety & indication audit for: ${customConditions}`,
+        pastMedicalHistory: customConditions.split(',').map(c => c.trim()).filter(Boolean),
+        currentMedications: customMedList.split(',').map(m => m.trim()).filter(Boolean),
+        labVitals: {
+          bp: '138/86 mmHg',
+          hr: '78 bpm',
+          scr: '1.8 mg/dL',
+          crcl: `${customCrCl} mL/min (Calculated via Cockcroft-Gault)`,
+          k: `${customK} mEq/L (Electrolyte Panel)`,
+          glucose: '134 mg/dL',
+          other: 'Comprehensive DTP screening across 7 Cipolle domains.'
+        },
+        dtps: items,
+        allDtps: allScanned,
+        soap: {
+          subjective: `${customPatientAge}yo patient presenting with ${customConditions}. Active drug list: ${customMedList}.`,
+          objective: `Renal clearance: ${customCrCl} mL/min, Serum K+: ${customK} mEq/L. Evaluated using EFDA/MoH standard criteria.`,
+          assessment: `Identified ${items.length} drug therapy problems with potential clinical morbidity or organ damage.`,
+          plan: items.length > 0
+            ? items.map((d, i) => `${i + 1}. [${d.suspectedDrug}]: ${d.proposedPharmacistIntervention}`).join(' ')
+            : 'No critical therapy problems identified at current dosages. Continue clinical surveillance.'
+        },
+        reportRef: `CPIR-2026-SCAN${Date.now().toString().slice(-6)}-ETH`
+      };
+    }
+  };
+
+  // Generate Formatted Quick Text Summary for Handover / EMR / Sharing
+  const generateQuickTextSummary = (source: 'case' | 'scan'): string => {
+    const data = getActiveExportData(source);
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    const crit = data.dtps.filter(d => d.severityLevel === 'critical').length;
+    const high = data.dtps.filter(d => d.severityLevel === 'high').length;
+    const med = data.dtps.filter(d => d.severityLevel === 'medium').length;
+    const low = data.dtps.filter(d => d.severityLevel === 'low').length;
+
+    return `========================================================================
+    CLINICAL PHARMACIST INTERVENTION REPORT (DTP HANDOVER SUMMARY)
+    Federal Democratic Republic of Ethiopia • Ministry of Health
+    Directorate of Clinical Services • Hospital Drug & Therapeutics Committee
+========================================================================
+REPORT REF      : ${data.reportRef}
+TIMESTAMP       : ${dateStr} at ${timeStr}
+CLINICAL SETTING: ${data.clinicalSetting}
+PATIENT PROFILE : ${data.patientDemographics}
+DIAGNOSES       : ${data.pastMedicalHistory.join('; ')}
+ACTIVE REGIMEN  : ${data.currentMedications.join('; ')}
+KEY LAB/VITALS  : CrCl: ${data.labVitals.crcl} | K+: ${data.labVitals.k} | BP: ${data.labVitals.bp}
+
+------------------------------------------------------------------------
+TRIAGE SUMMARY:
+Total DTPs Identified: ${data.dtps.length} [Critical: ${crit} | High: ${high} | Medium: ${med} | Low: ${low}]
+------------------------------------------------------------------------
+IDENTIFIED DRUG THERAPY PROBLEMS (CIPOLLE 7-CATEGORY CLASSIFICATION):
+${data.dtps.map((dtp, idx) => `
+${idx + 1}. [${dtp.severity.toUpperCase()}] ${dtp.suspectedDrug}
+   * Category           : ${dtp.category}
+   * Classification Code: ${dtp.cipolleClassificationCode}
+   * Etiology / Cause   : ${dtp.contributingCause}
+   * Clinical Consequence: ${dtp.clinicalConsequence}
+   * Pharmacist Action  : ${dtp.proposedPharmacistIntervention}
+   * Target Monitoring  : ${dtp.monitoringParameter}
+`).join('')}
+------------------------------------------------------------------------
+SBAR CLINICAL HANDOVER SUMMARY:
+S (Situation)     : ${data.soap.subjective}
+B (Background)    : History of ${data.pastMedicalHistory.join(', ')}. Renal clearance: ${data.labVitals.crcl}, K+: ${data.labVitals.k}.
+A (Assessment)    : ${data.soap.assessment}
+R (Recommendation): ${data.soap.plan}
+
+------------------------------------------------------------------------
+ATTENDING PHYSICIAN INTERVENTION DISPOSITION:
+[ ] Accepted As Recommended   [ ] Accepted With Modification   [ ] Retained Current Regimen
+
+Physician Signature: ___________________________________  Date: ____________
+
+------------------------------------------------------------------------
+AUTHENTICATED BY:
+Pharmacist Dawid Aliyi, BCPS
+Lead Clinical Pharmacist Specialist & Academic Preceptor
+License: EFDA/CLIN/ETH/2026/0491 • Pharma Star App Pro Clinical Suite
+========================================================================`;
+  };
+
+  // Copy Quick Text to Clipboard
+  const handleCopyQuickText = (source: 'case' | 'scan') => {
+    const text = generateQuickTextSummary(source);
+    navigator.clipboard.writeText(text);
+    setCopiedQuickText(true);
+    setTimeout(() => setCopiedQuickText(false), 2500);
+  };
+
+  // Download Quick Text File
+  const handleDownloadQuickText = (source: 'case' | 'scan') => {
+    const text = generateQuickTextSummary(source);
+    const filename = `DTP-Intervention-${source === 'case' ? activeCase.id : 'CustomScan'}-${new Date().toISOString().slice(0, 10)}.txt`;
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Download Standalone Formatted HTML Report Dossier
+  const handleDownloadReportHtml = (source: 'case' | 'scan') => {
+    const data = getActiveExportData(source);
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Clinical Pharmacist Intervention Report - ${data.reportRef}</title>
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; padding: 20px; font-size: 11px; line-height: 1.45; }
+    .header { border-bottom: 3px double #0f766e; padding-bottom: 12px; margin-bottom: 14px; }
+    .moh-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 8px; font-size: 10px; color: #475569; font-weight: 600; }
+    .title { font-size: 16px; font-weight: 800; color: #0f766e; letter-spacing: -0.2px; text-transform: uppercase; }
+    .subtitle { font-size: 10px; color: #334155; margin-top: 2px; }
+    .box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; margin-bottom: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; text-transform: uppercase; }
+    .badge-critical { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+    .badge-high { background: #ffedd5; color: #9a3412; border: 1px solid #fb923c; }
+    .badge-medium { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .badge-low { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 14px; }
+    th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; font-size: 10px; font-weight: 700; color: #1e293b; }
+    .soap-box { border-left: 3px solid #0f766e; padding-left: 10px; margin-bottom: 10px; }
+    .sig-table { width: 100%; border: none; margin-top: 20px; }
+    .sig-table td { border: 1px solid #cbd5e1; background: #fafafa; padding: 10px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="moh-bar">
+      <span>FEDERAL DEMOCRATIC REPUBLIC OF ETHIOPIA • MINISTRY OF HEALTH</span>
+      <span>HOSPITAL DRUG &amp; THERAPEUTICS COMMITTEE</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+      <div>
+        <div class="title">Clinical Pharmacist Intervention Report</div>
+        <div class="subtitle">Standardized Pharmacotherapy Workup &amp; DTP Auditing Protocol (Cipolle Classification)</div>
+      </div>
+      <div style="text-align: right; font-size: 10px;">
+        <div><strong>Ref:</strong> ${data.reportRef}</div>
+        <div><strong>Date:</strong> ${dateStr} ${timeStr}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="grid-2">
+      <div><strong>Patient:</strong> ${data.patientDemographics}</div>
+      <div><strong>Clinical Ward/Setting:</strong> ${data.clinicalSetting}</div>
+      <div><strong>Diagnoses:</strong> ${data.pastMedicalHistory.join(', ')}</div>
+      <div><strong>Key Labs:</strong> CrCl ${data.labVitals.crcl} | K+ ${data.labVitals.k} | BP ${data.labVitals.bp}</div>
+    </div>
+  </div>
+
+  <h4 style="color: #0f766e; margin-bottom: 4px; font-size: 12px;">1. IDENTIFIED DRUG THERAPY PROBLEMS (DTPs)</h4>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 4%;">#</th>
+        <th style="width: 20%;">Cipolle Category &amp; Suspected Drug</th>
+        <th style="width: 10%;">Priority</th>
+        <th style="width: 33%;">Etiology &amp; Clinical Consequences</th>
+        <th style="width: 33%;">Recommended Pharmacist Intervention &amp; Monitoring</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${data.dtps.map((d, i) => `
+        <tr>
+          <td><strong>${i + 1}</strong></td>
+          <td>
+            <strong>${d.suspectedDrug}</strong><br/>
+            <span style="font-size: 9.5px; color: #475569;">${d.category}</span><br/>
+            <span style="font-size: 8.5px; color: #64748b;">${d.cipolleClassificationCode}</span>
+          </td>
+          <td>
+            <span class="badge badge-${d.severityLevel}">${d.severity}</span>
+          </td>
+          <td>
+            <strong>Etiology:</strong> ${d.contributingCause}<br/>
+            <span style="color: #b91c1c;"><strong>Harm/Risk:</strong> ${d.clinicalConsequence}</span>
+          </td>
+          <td>
+            <strong>Recommendation:</strong> ${d.proposedPharmacistIntervention}<br/>
+            <span style="color: #0f766e; font-size: 9.5px;"><strong>Monitoring:</strong> ${d.monitoringParameter}</span>
+          </td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <h4 style="color: #0f766e; margin-bottom: 4px; font-size: 12px;">2. SBAR CLINICAL HANDOVER SUMMARY</h4>
+  <div class="box">
+    <div class="soap-box"><strong>S (Situation):</strong> ${data.soap.subjective}</div>
+    <div class="soap-box"><strong>B (Background):</strong> Past history of ${data.pastMedicalHistory.join(', ')}. Key labs: CrCl ${data.labVitals.crcl}, K+ ${data.labVitals.k}. Active medications: ${data.currentMedications.join('; ')}</div>
+    <div class="soap-box"><strong>A (Assessment):</strong> ${data.soap.assessment}</div>
+    <div class="soap-box"><strong>R (Recommendation):</strong> ${data.soap.plan}</div>
+  </div>
+
+  <table class="sig-table">
+    <tr>
+      <td style="width: 50%;">
+        <strong>Clinical Pharmacist Authentication:</strong><br/><br/>
+        <strong>Pharmacist Dawid Aliyi, BCPS</strong><br/>
+        Lead Clinical Pharmacist Specialist &amp; Academic Preceptor<br/>
+        EFDA Practicing License: <strong>EFDA/CLIN/ETH/2026/0491</strong><br/>
+        Signature: <em>Dawid Aliyi, BCPS</em> &nbsp;&nbsp;&nbsp; Date: ${dateStr}
+      </td>
+      <td style="width: 50%;">
+        <strong>Attending Physician Disposition:</strong><br/><br/>
+        [ ${physicianDisposition === 'accepted' ? 'X' : ' &nbsp; '} ] Accepted As Recommended &nbsp;&nbsp;
+        [ ${physicianDisposition === 'modified' ? 'X' : ' &nbsp; '} ] Accepted With Modification<br/>
+        [ ${physicianDisposition === 'retained' ? 'X' : ' &nbsp; '} ] Retained Current Regimen &nbsp;&nbsp;
+        [ ${physicianDisposition === 'rejected' ? 'X' : ' &nbsp; '} ] Not Accepted<br/><br/>
+        Physician Notes: ${physicianNotes}<br/>
+        Physician Signature: ______________________ Date: ___________
+      </td>
+    </tr>
+  </table>
+
+  <div style="text-align: center; margin-top: 15px; font-size: 8.5px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 6px;">
+    Pharma Star App Pro Clinical Suite • Standardized Clinical Pharmacist Intervention Report • Aligned with EFDA &amp; WHO Guidelines
+  </div>
+</body>
+</html>`;
+
+    const filename = `Clinical-Pharmacist-Intervention-Report-${data.reportRef}-${new Date().toISOString().slice(0, 10)}.html`;
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleOpenQuickExport = (source: 'case' | 'scan') => {
+    setExportSource(source);
+    setQuickExportModalOpen(true);
+  };
+
+  const handleOpenInterventionReport = (source: 'case' | 'scan') => {
+    setExportSource(source);
+    setReportModalOpen(true);
+  };
 
   // Copy SOAP Note
   const handleCopySOAP = () => {
@@ -1156,30 +1452,40 @@ License: EFDA/CLIN/ETH/2026/0491`;
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Export to PDF Button (Primary User Request) */}
+            {/* Quick Export Feature (User Request 5) */}
             <button
-              onClick={() => handleExportFilteredToPDF(activeTab === 'interactive_checker' ? 'scan' : 'case')}
-              className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white border border-teal-400/40 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-teal-500/20"
-              title="Export filtered list of DTPs with severity classifications as printable PDF for patient record-keeping"
+              onClick={() => handleOpenQuickExport(activeTab === 'interactive_checker' ? 'scan' : 'case')}
+              className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-teal-500/20"
+              title="Generate quick text summary or formatted handover for rapid clinical sharing"
             >
-              <Download className="w-4 h-4 text-white" />
-              <span>Export to PDF (Filtered)</span>
+              <Share2 className="w-4 h-4 text-white" />
+              <span>Quick Export</span>
+            </button>
+
+            {/* Standardized Clinical Pharmacist Intervention Report (User Request 7) */}
+            <button
+              onClick={() => handleOpenInterventionReport(activeTab === 'interactive_checker' ? 'scan' : 'case')}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-amber-500/20"
+              title="Format into standardized Clinical Pharmacist Intervention Report (MoH / Hospital DTC printable structure)"
+            >
+              <FileText className="w-4 h-4 text-slate-950" />
+              <span>Intervention Report (PDF)</span>
             </button>
 
             <button
               onClick={handlePrintSOAP}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Print SOAP Note</span>
+              <span>Print SOAP</span>
             </button>
 
             <button
               onClick={handleCopySOAP}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 shadow flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 shadow flex items-center gap-1.5 transition cursor-pointer"
             >
               {copiedNote ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-              <span>{copiedNote ? 'Copied Note' : 'Copy SOAP'}</span>
+              <span>{copiedNote ? 'Copied' : 'Copy SOAP'}</span>
             </button>
           </div>
         </div>
@@ -1729,14 +2035,25 @@ License: EFDA/CLIN/ETH/2026/0491`;
                     {scannedDTPs ? `${displayedScannedDTPs?.length || 0} Shown / ${scannedDTPs.length} Identified` : 'Awaiting Audit Trigger'}
                   </span>
                   {scannedDTPs && (
-                    <button
-                      onClick={() => handleExportFilteredToPDF('scan')}
-                      className="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[11px] font-bold flex items-center gap-1 transition shadow cursor-pointer"
-                      title="Export scanned issues with severity levels to PDF for patient record-keeping"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Export to PDF</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleOpenQuickExport('scan')}
+                        className="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[11px] font-bold flex items-center gap-1 transition shadow cursor-pointer"
+                        title="Generate quick clinical sharing summary"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>Quick Export</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenInterventionReport('scan')}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-extrabold flex items-center gap-1 transition shadow cursor-pointer"
+                        title="Standardized Clinical Pharmacist Intervention Report (Printable PDF)"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Report (PDF)</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -2037,6 +2354,411 @@ License: EFDA/CLIN/ETH/2026/0491`;
           </div>
         </div>
       )}
+
+      {/* MODAL 1: Quick Export & Clinical Sharing (User Request 5) */}
+      {quickExportModalOpen && (() => {
+        const textSummary = generateQuickTextSummary(exportSource);
+        const data = getActiveExportData(exportSource);
+
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-teal-500/40 rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              {/* Modal Header */}
+              <div className="p-5 border-b border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/40 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-300 flex items-center justify-center">
+                    <Share2 className="w-5 h-5 text-teal-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>Quick Clinical Handover &amp; Export</span>
+                      <span className="text-[10px] bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded-full font-mono">
+                        {data.reportRef}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Formatted plain-text summary suitable for EMR notes, multidisciplinary ward rounds, or messaging
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setQuickExportModalOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Action Toolbar */}
+              <div className="px-5 py-3 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-slate-400">
+                  <span className="font-semibold text-slate-300">{data.dtps.length} DTP(s)</span>
+                  <span>•</span>
+                  <span>Target: <strong className="text-teal-300">{data.patientDemographics.split('•')[0]}</strong></span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleCopyQuickText(exportSource)}
+                    className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold transition flex items-center gap-1.5 shadow cursor-pointer"
+                  >
+                    {copiedQuickText ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedQuickText ? 'Copied to Clipboard!' : 'Copy Summary'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadQuickText(exportSource)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 text-teal-400" />
+                    <span>Download .txt</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setQuickExportModalOpen(false);
+                      setReportModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition flex items-center gap-1.5 cursor-pointer shadow"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-slate-950" />
+                    <span>Printable Report (PDF)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Text Summary Body */}
+              <div className="p-5 overflow-y-auto flex-1 bg-slate-950/70 font-mono text-[11px] leading-relaxed text-slate-300 selection:bg-teal-500 selection:text-white">
+                <pre className="whitespace-pre-wrap break-words bg-slate-950 p-4 rounded-2xl border border-slate-800/80 shadow-inner">
+                  {textSummary}
+                </pre>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-slate-800 bg-slate-900 flex items-center justify-between text-xs text-slate-400">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                  <span>EFDA &amp; MoH Pharmaceutical Care Standard Handover</span>
+                </span>
+                <button
+                  onClick={() => setQuickExportModalOpen(false)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* MODAL 2: Standardized 'Clinical Pharmacist Intervention Report' Template Engine (User Request 7) */}
+      {reportModalOpen && (() => {
+        const data = getActiveExportData(exportSource);
+        const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full my-auto shadow-2xl flex flex-col max-h-[94vh] overflow-hidden">
+              {/* Screen-Only Modal Header & Action Toolbar */}
+              <div className="p-4 sm:p-5 border-b border-slate-800 bg-slate-950 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-300 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                      <span>Clinical Pharmacist Intervention Report</span>
+                      <span className="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded border border-teal-500/30 font-mono">
+                        MoH / DTC Standard
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Printable PDF structure with Cipolle classification, SBAR workup, and Physician disposition
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20 cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print / Save as PDF</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadReportHtml(exportSource)}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <FileDown className="w-4 h-4 text-teal-400" />
+                    <span>Download HTML</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleCopyQuickText(exportSource)}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Copy className="w-4 h-4 text-slate-400" />
+                    <span>Copy Text</span>
+                  </button>
+
+                  <button
+                    onClick={() => setReportModalOpen(false)}
+                    className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Report Document Viewer */}
+              <div className="p-4 sm:p-8 overflow-y-auto flex-1 bg-slate-950">
+                <div 
+                  id="clinical-intervention-report-dossier" 
+                  className="bg-white text-slate-900 rounded-2xl p-6 sm:p-8 max-w-3xl mx-auto shadow-2xl border border-slate-200 text-xs leading-relaxed space-y-6"
+                >
+                  {/* MoH & Hospital DTC Header */}
+                  <div className="border-b-2 border-teal-700 pb-4 space-y-2">
+                    <div className="flex flex-col sm:flex-row items-center justify-between border-b border-slate-200 pb-2 text-[10px] text-slate-600 font-bold uppercase tracking-wider">
+                      <span>Federal Democratic Republic of Ethiopia • Ministry of Health</span>
+                      <span>Hospital Drug &amp; Therapeutics Committee (DTC)</span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-2">
+                      <div>
+                        <h1 className="text-xl sm:text-2xl font-black text-teal-800 tracking-tight">
+                          CLINICAL PHARMACIST INTERVENTION REPORT
+                        </h1>
+                        <p className="text-slate-600 font-semibold text-[11px]">
+                          Standardized Pharmaceutical Care &amp; Drug Therapy Problem (DTP) Resolution Dossier
+                        </p>
+                      </div>
+
+                      <div className="text-right text-[11px] font-mono bg-slate-100 p-2 rounded-lg border border-slate-200 shrink-0">
+                        <div><strong>REF:</strong> {data.reportRef}</div>
+                        <div><strong>DATE:</strong> {dateStr} {timeStr}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Patient & Facility Grid */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+                    <div>
+                      <span className="text-slate-500 font-semibold">Patient Profile:</span>
+                      <div className="font-bold text-slate-900 text-xs">{data.patientDemographics}</div>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 font-semibold">Clinical Setting / Ward:</span>
+                      <div className="font-bold text-slate-900 text-xs">{data.clinicalSetting}</div>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 font-semibold">Primary Diagnoses / PMH:</span>
+                      <div className="font-medium text-slate-800">{data.pastMedicalHistory.join(', ') || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 font-semibold">Key Laboratory / Vitals:</span>
+                      <div className="font-medium text-slate-800">
+                        CrCl: {data.labVitals.crcl} • K+: {data.labVitals.k} • BP: {data.labVitals.bp}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Regimen Strip */}
+                  <div className="border border-slate-200 rounded-xl p-3 bg-white">
+                    <span className="text-[10px] uppercase font-bold text-teal-700 tracking-wider">Screened Medication Regimen:</span>
+                    <div className="text-slate-800 font-medium text-[11px] mt-1">
+                      {data.currentMedications.join(' • ')}
+                    </div>
+                  </div>
+
+                  {/* Section 1: Standardized Cipolle 7-Category Table */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className="text-sm font-bold text-teal-800 uppercase tracking-wide flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <span>1. Identified Drug Therapy Problems ({data.dtps.length})</span>
+                      </h2>
+                      <span className="text-[10px] text-slate-500 font-medium">Cipolle, Strand &amp; Morley Standard</span>
+                    </div>
+
+                    <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                      <table className="w-full text-left border-collapse text-[10px]">
+                        <thead>
+                          <tr className="bg-slate-100 border-b border-slate-200 text-slate-700">
+                            <th className="p-2.5 font-bold w-6">#</th>
+                            <th className="p-2.5 font-bold w-48">Problem Category &amp; Drug</th>
+                            <th className="p-2.5 font-bold w-20">Priority</th>
+                            <th className="p-2.5 font-bold">Contributing Cause &amp; Clinical Harm</th>
+                            <th className="p-2.5 font-bold">Pharmacist Recommendation</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {data.dtps.map((dtp, idx) => {
+                            const isCrit = dtp.severityLevel === 'critical';
+                            const isHigh = dtp.severityLevel === 'high';
+                            const isMed = dtp.severityLevel === 'medium';
+
+                            return (
+                              <tr key={dtp.id || idx} className="hover:bg-slate-50 transition">
+                                <td className="p-2.5 font-bold text-slate-500 align-top">{idx + 1}</td>
+                                <td className="p-2.5 align-top">
+                                  <div className="font-bold text-slate-900 text-[11px]">{dtp.suspectedDrug}</div>
+                                  <div className="text-teal-700 font-semibold">{dtp.category}</div>
+                                  <div className="text-[9px] text-slate-500">{dtp.cipolleClassificationCode}</div>
+                                </td>
+                                <td className="p-2.5 align-top">
+                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                    isCrit
+                                      ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                      : isHigh
+                                      ? 'bg-orange-100 text-orange-800 border border-orange-300'
+                                      : isMed
+                                      ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                      : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  }`}>
+                                    {dtp.severityLevel}
+                                  </span>
+                                </td>
+                                <td className="p-2.5 align-top space-y-1">
+                                  <div><strong className="text-slate-700">Cause:</strong> {dtp.contributingCause}</div>
+                                  <div className="text-rose-700 font-medium">
+                                    <strong>Consequence:</strong> {dtp.clinicalConsequence}
+                                  </div>
+                                </td>
+                                <td className="p-2.5 align-top space-y-1">
+                                  <div className="font-bold text-teal-900">{dtp.proposedPharmacistIntervention}</div>
+                                  <div className="text-slate-600 text-[9px]">
+                                    <strong>Target Monitoring:</strong> {dtp.monitoringParameter}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Section 2: SBAR Clinical Handover & SOAP Workup */}
+                  <div>
+                    <h2 className="text-sm font-bold text-teal-800 uppercase tracking-wide mb-2">
+                      2. SBAR Clinical Handover &amp; Pharmacotherapy Workup
+                    </h2>
+                    <div className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-2 text-[11px]">
+                      <div>
+                        <strong className="text-teal-800">S (Situation):</strong>{' '}
+                        <span className="text-slate-800">{data.soap.subjective}</span>
+                      </div>
+                      <div>
+                        <strong className="text-teal-800">B (Background):</strong>{' '}
+                        <span className="text-slate-800">
+                          Patient history of {data.pastMedicalHistory.join(', ')}. Key lab values: CrCl {data.labVitals.crcl}, K+ {data.labVitals.k}, BP {data.labVitals.bp}. Active medicines: {data.currentMedications.join('; ')}.
+                        </span>
+                      </div>
+                      <div>
+                        <strong className="text-teal-800">A (Assessment):</strong>{' '}
+                        <span className="text-slate-800">{data.soap.assessment}</span>
+                      </div>
+                      <div>
+                        <strong className="text-teal-800">R (Recommendation):</strong>{' '}
+                        <span className="text-slate-900 font-medium">{data.soap.plan}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 3: Prescriber / Attending Physician Disposition */}
+                  <div className="border-2 border-slate-300 rounded-xl p-4 bg-slate-50/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold uppercase text-slate-800">
+                        3. Attending Physician / Care Team Intervention Disposition
+                      </h3>
+                      <span className="text-[10px] text-slate-500 italic">Required under Ethiopian GPP / MoH Protocol</span>
+                    </div>
+
+                    {/* Interactive Selection for Print Preview */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+                      {[
+                        { id: 'accepted', label: 'Accepted as Recommended' },
+                        { id: 'modified', label: 'Accepted with Modification' },
+                        { id: 'retained', label: 'Retained Current Regimen' },
+                        { id: 'rejected', label: 'Not Accepted / Alternative' }
+                      ].map(opt => (
+                        <label
+                          key={opt.id}
+                          className={`p-2 rounded-lg border flex items-center gap-1.5 cursor-pointer font-medium transition ${
+                            physicianDisposition === opt.id
+                              ? 'bg-teal-50 border-teal-600 text-teal-900 font-bold'
+                              : 'bg-white border-slate-200 text-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="disposition"
+                            checked={physicianDisposition === opt.id}
+                            onChange={() => setPhysicianDisposition(opt.id as any)}
+                            className="text-teal-600"
+                          />
+                          <span>{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-700 block mb-1">
+                        Physician Clinical Commentary / Ward Action Notes:
+                      </label>
+                      <input
+                        type="text"
+                        value={physicianNotes}
+                        onChange={(e) => setPhysicianNotes(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-teal-600"
+                        placeholder="e.g. Recommendations discussed and accepted. NSAID stopped; furosemide IV commenced."
+                      />
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[11px] text-slate-700">
+                      <div>
+                        <div>Physician Signature: _________________________________</div>
+                        <div className="text-[9px] text-slate-500 mt-0.5">Print Full Name &amp; License Number</div>
+                      </div>
+                      <div>
+                        <div>Date &amp; Time: _________________</div>
+                        <div className="text-[9px] text-slate-500 mt-0.5">MM / DD / YYYY — HH:MM</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 4: Lead Clinical Pharmacist Authentication */}
+                  <div className="pt-2 border-t border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[11px]">
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-slate-500 uppercase font-bold">Reporting Specialist:</div>
+                      <div className="text-sm font-extrabold text-teal-800">Pharmacist Dawid Aliyi, BCPS</div>
+                      <div className="text-slate-600">Lead Clinical Pharmacist Specialist &amp; Academic Preceptor</div>
+                      <div className="text-slate-500 font-mono text-[10px]">
+                        EFDA Practicing License: <strong>EFDA/CLIN/ETH/2026/0491</strong>
+                      </div>
+                    </div>
+
+                    <div className="border border-teal-700/30 rounded-xl p-3 bg-teal-50 text-center font-mono text-[9px] text-teal-900 space-y-0.5 shrink-0">
+                      <div className="font-bold">✦ CLINICAL PHARMACY SERVICE ✦</div>
+                      <div>ETHIOPIA PATIENT SAFETY AUDIT</div>
+                      <div className="text-[8px] text-slate-500">DIGITAL HASH: SHA256-DTP-VERIFIED</div>
+                    </div>
+                  </div>
+
+                  {/* Footer Notice */}
+                  <div className="text-center text-[9px] text-slate-400 border-t border-slate-100 pt-3">
+                    Pharma Star App Pro Clinical Suite • Standardized Clinical Pharmacist Intervention Report • Aligned with EFDA, MoH, and WHO Guidelines
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -1,0 +1,161 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  PROFESSIONAL
+  WHOLESALER
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                 String             @id @default(uuid())
+  email              String             @unique
+  fullName           String?
+  name               String?
+  profession         String?            @default("PHARMACIST")
+  licenseNumber      String?
+  role               UserRole           @default(PROFESSIONAL)
+  createdAt          DateTime           @default(now())
+  
+  licenseCycles      LicenseCycle[]
+  moduleCompletions  ModuleCompletion[]
+  certificates       Certificate[]
+  professionalProfile ProfessionalProfile?
+  wholesalerProfile   WholesalerProfile?
+  auditLogs          AuditLog[]
+
+  @@map("users")
+}
+
+model ProfessionalProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  licenseNumber    String   @unique
+  ethiopianRegion  String
+  isVerifiedByMoH  Boolean  @default(false)
+  updatedAt        DateTime @default(now())
+  
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ethiopianRegion], name: "idx_prof_region")
+  @@map("professional_profiles")
+}
+
+model WholesalerProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  companyName         String
+  tinNumber           String   @unique
+  inventoryUpdatedAt  DateTime @default(now())
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wholesaler_profiles")
+}
+
+model LicenseCycle {
+  id        String   @id @default(uuid())
+  userId    String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate, endDate])
+  @@map("license_cycles")
+}
+
+model Course {
+  id          String             @id @default(uuid())
+  title       String
+  ceuCredits  Int
+  isEthics    Boolean            @default(false)
+  description String?
+  createdAt   DateTime           @default(now())
+
+  completions ModuleCompletion[]
+
+  @@map("courses")
+}
+
+model ModuleCompletion {
+  id          String   @id @default(uuid())
+  userId      String
+  courseId    String
+  earnedCeu   Int
+  completedAt DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+  @@map("module_completions")
+}
+
+model CpdModule {
+  id           String          @id @default(uuid())
+  title        String
+  description  String?
+  totalCredits Int
+  createdAt    DateTime        @default(now())
+
+  chapters     ModuleChapter[]
+  certificates Certificate[]
+
+  @@map("cpd_modules")
+}
+
+model ModuleChapter {
+  id              String   @id @default(uuid())
+  moduleId        String
+  chapterNumber   Int
+  title           String
+  contentMarkdown String
+
+  module          CpdModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, chapterNumber])
+  @@map("module_chapters")
+}
+
+model Certificate {
+  id              String    @id @default(uuid())
+  userId          String
+  moduleId        String
+  certificateCode String    @unique
+  qrCodeHash      String
+  issuedAt        DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module          CpdModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+  @@index([certificateCode], name: "idx_cert_code")
+  @@map("certificates")
+}
+
+model AuditLog {
+  id          BigInt   @id @default(autoincrement())
+  userId      String?
+  actionType  String
+  description String
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

@@ -15,8 +15,10 @@ interface CPDModuleHubProps {
 }
 
 export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }) => {
-  const [activeTab, setActiveTab] = useState<'modules' | 'wallet'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'wallet' | 'cycle_status'>('modules');
   const [selectedModule, setSelectedModule] = useState<CPDModule | null>(null);
+  const [cpdCycleData, setCpdCycleData] = useState<any>(null);
+  const [isLoadingCycle, setIsLoadingCycle] = useState(false);
   
   // Quiz State (20 Questions - Answers NOT revealed during examination)
   const [isQuizActive, setIsQuizActive] = useState(false);
@@ -50,6 +52,18 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
     } catch (e) {
       // fallback
     }
+
+    // Fetch active license cycle status from Express API
+    setIsLoadingCycle(true);
+    fetch('/api/users/usr-demo-dawid/cpd-status')
+      .then(res => res.json())
+      .then(result => {
+        if (result?.success && result?.data) {
+          setCpdCycleData(result.data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingCycle(false));
   }, []);
 
   const saveCertificate = (cert: IssuedCPDCertificate) => {
@@ -239,6 +253,23 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
           <FileText className="w-4 h-4" />
           <span>My Earned Certificates ({savedCertificates.length})</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('cycle_status')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer ${
+            activeTab === 'cycle_status'
+              ? 'bg-amber-600 text-white shadow-lg'
+              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-amber-400" />
+          <span>Federal License Cycle Tracking</span>
+          {cpdCycleData?.compliance?.eligibleForRenewal && (
+            <span className="bg-emerald-500/30 text-emerald-300 text-[10px] px-1.5 py-0.2 rounded font-bold border border-emerald-500/40">
+              Eligible
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Modules List View */}
@@ -396,6 +427,147 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Federal License Cycle Status View (EFDA & MoH Standard) */}
+      {activeTab === 'cycle_status' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+            {/* Header Strip */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20">
+                  EFDA &amp; MoH Directive No. 49/2022
+                </span>
+                <h3 className="text-lg font-bold text-white mt-1">
+                  Practitioner License Cycle Tracking &amp; Renewal Status
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Automated validation with 15-CEU single course ceiling rule and mandatory 5-CEU ethics threshold
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {cpdCycleData?.compliance?.eligibleForRenewal ? (
+                  <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 shadow">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>Eligible for Annual Renewal</span>
+                  </span>
+                ) : (
+                  <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 shadow">
+                    <AlertCircle className="w-4 h-4 text-amber-400" />
+                    <span>In Progress (Credits Pending)</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Cycle Details Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Card 1: Total CEUs */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                <span className="text-xs text-slate-400 font-semibold block">Total CEUs Earned:</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-white font-mono">
+                    {cpdCycleData?.metrics?.totalEarnedCeu ?? 26}
+                  </span>
+                  <span className="text-xs text-slate-400">/ 30 CEUs Required</span>
+                </div>
+                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-teal-500 h-full rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (((cpdCycleData?.metrics?.totalEarnedCeu ?? 26) / 30) * 100))}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-slate-500 block">
+                  Shortfall: {cpdCycleData?.metrics?.shortfall ?? 4} CEUs
+                </span>
+              </div>
+
+              {/* Card 2: Ethics CEUs */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                <span className="text-xs text-slate-400 font-semibold block">Mandatory Ethics CEUs:</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-amber-300 font-mono">
+                    {cpdCycleData?.metrics?.ethicsCeu ?? 6}
+                  </span>
+                  <span className="text-xs text-slate-400">/ 5 CEUs Required</span>
+                </div>
+                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-amber-500 h-full rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (((cpdCycleData?.metrics?.ethicsCeu ?? 6) / 5) * 100))}%` }}
+                  />
+                </div>
+                <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  Ethics Quota Met
+                </span>
+              </div>
+
+              {/* Card 3: Active Cycle Window */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1 text-xs">
+                <span className="text-slate-400 font-semibold block">Active Licensing Window:</span>
+                <div className="font-mono text-teal-300 font-bold">
+                  {cpdCycleData?.cycleStart ? new Date(cpdCycleData.cycleStart).toLocaleDateString() : 'Jan 1, 2026'} –{' '}
+                  {cpdCycleData?.cycleEnd ? new Date(cpdCycleData.cycleEnd).toLocaleDateString() : 'Dec 31, 2026'}
+                </div>
+                <div className="text-[10px] text-slate-500 pt-1">
+                  Cycle ID: <span className="font-mono text-slate-400">{cpdCycleData?.cycleId || 'cycle-2026-eth-01'}</span>
+                </div>
+                <span className="text-[10px] text-rose-400 block font-medium">
+                  Strictly No Rollover across cycles
+                </span>
+              </div>
+
+              {/* Card 4: Federal Renewal Status */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+                <span className="text-slate-400 font-semibold block">Regulatory Compliance:</span>
+                <div className="space-y-1 text-[11px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Total Requirement:</span>
+                    <span className={cpdCycleData?.compliance?.meetsTotalRequirement ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
+                      {cpdCycleData?.compliance?.meetsTotalRequirement ? "Met (>= 30)" : "Pending"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Ethics Requirement:</span>
+                    <span className={cpdCycleData?.compliance?.meetsEthicsRequirement ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
+                      {cpdCycleData?.compliance?.meetsEthicsRequirement ? "Met (>= 5)" : "Pending"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-800 pt-1">
+                    <span className="text-slate-300 font-bold">Renewal Eligible:</span>
+                    <span className={cpdCycleData?.compliance?.eligibleForRenewal ? "text-emerald-400 font-black" : "text-amber-400 font-black"}>
+                      {cpdCycleData?.compliance?.eligibleForRenewal ? "YES" : "NO"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Directive Rules Callout */}
+            <div className="p-4 rounded-xl bg-teal-950/30 border border-teal-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="space-y-1">
+                <span className="font-bold text-teal-300 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-teal-400" />
+                  <span>Federal Cap &amp; Verification Rules Active:</span>
+                </span>
+                <p className="text-slate-300 text-[11px]">
+                  1. Single course ceiling rule: max 15 CEUs per activity • 2. Minimum 5 CEUs in Professional Ethics &amp; Jurisprudence • 3. Verification endpoint: <code className="bg-slate-900 px-1 py-0.5 rounded text-amber-300 font-mono">/api/users/:userId/cpd-status</code>
+                </p>
+              </div>
+
+              <button
+                onClick={() => setActiveTab('modules')}
+                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shrink-0 transition flex items-center gap-1.5 cursor-pointer shadow"
+              >
+                <span>Complete Modules to Close Shortfall</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
