@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+git add -f path/to/your/applet-folder
+git commit -m "Fix: Add applet assets and source files"
+git push origin main
