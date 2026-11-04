@@ -56,6 +56,8 @@ import { UniversalPaymentModal } from './components/UniversalPaymentModal';
 import { PHARMASTAR_SERVICES, PaymentServiceItem } from './data/paymentServicesConfig';
 import { getStoredUser, saveUserAndPayment } from './utils/userStorage';
 import { PaymentRecord } from './types';
+import { useCurrency } from './context/CurrencyContext';
+import { CountryCurrencySelector } from './components/CountryCurrencySelector';
 
 import { 
   Sparkles, BookOpen, Video, ShieldCheck, Stethoscope, 
@@ -69,6 +71,7 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  const { isEthiopia, currency, formatPrice } = useCurrency();
   const [viewMode, setViewMode] = useState<'website' | 'app'>('website');
   const [currentLang, setCurrentLang] = useState<Language>('en');
   const [activeTab, setActiveTab] = useState<
@@ -286,7 +289,15 @@ export default function App() {
           {/* CBE & Registration Fee info */}
           <div className="flex items-center gap-3">
             <span className="text-slate-400 hidden md:inline">
-              Registration: <strong className="text-teal-300">1,000 Birr</strong> (CBE: <strong className="text-white font-mono">1000262900367</strong> Dawid Aliyi) or <strong className="text-teal-300">$10 USD (Chapa)</strong>
+              {isEthiopia ? (
+                <>
+                  Registration: <strong className="text-teal-300">1,000 Birr</strong> (CBE: <strong className="text-white font-mono">1000262900367</strong> Dawid Aliyi) or <strong className="text-teal-300">Telebirr (0982852778)</strong>
+                </>
+              ) : (
+                <>
+                  Global Registration: <strong className="text-teal-300">$10.00 USD</strong> (Visa, Mastercard, PayPal) or <strong className="text-teal-300">1,000 ETB</strong>
+                </>
+              )}
             </span>
 
             <button
@@ -438,6 +449,9 @@ export default function App() {
               )}
             </button>
 
+            {/* Country & Currency Switcher */}
+            <CountryCurrencySelector />
+
             {/* Language Dropdown */}
             <div className="relative flex items-center">
               <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
@@ -502,7 +516,11 @@ export default function App() {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-800 bg-slate-900 p-4 space-y-1">
+          <div className="md:hidden border-t border-slate-800 bg-slate-900 p-4 space-y-2">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <span className="text-xs text-slate-400 font-medium">Country & Currency</span>
+              <CountryCurrencySelector />
+            </div>
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;

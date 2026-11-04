@@ -33,6 +33,7 @@ import { initialSponsorLetters } from './src/data/sponsorLettersData.ts';
 import { SponsorInvitationLetter } from './src/types/sponsorLetter.ts';
 import { BarcodeScanResult, PaymentWebhookEvent } from './src/types/index.ts';
 import cpdRouter from './cpdRoutes.ts';
+import { verifyGlobalCompliance } from './controllers/cpdController.ts';
 
 dotenv.config();
 
@@ -238,14 +239,52 @@ app.get('/api/sponsorships', (req, res) => {
 });
 
 app.get('/api/payment-methods', (req, res) => {
+  const reqCountry = (req.headers['x-country-code'] || req.query.country || '').toString().toUpperCase();
+  const isEt = reqCountry === 'ET' || !reqCountry;
+  
   res.json({
+    activeCurrency: isEt ? 'ETB' : 'USD',
+    isEthiopia: isEt,
     cbe: { account: '1000262900367', holder: 'Dawid Aliyi', branch: 'Commercial Bank of Ethiopia' },
     telebirr: { phone: '0982852778', holder: 'Dawid Aliyi', ussd: '*127#' },
     cbeBirr: { ussd: '*847#', merchantCode: '262900' },
     chapa: { gateway: 'Chapa Unified Payment', supported: ['Telebirr', 'CBE Birr', 'Awash', 'Dashen', 'Cards'] },
     awash: { account: '0132047913300', holder: 'Dawid Aliyi' },
     dashen: { account: '5120262900367', holder: 'Dawid Aliyi' },
-    internationalCard: { amountUSD: 1.00, cpdCertificateUSD: 5.00 }
+    internationalCard: { amountUSD: 1.00, cpdCertificateUSD: 5.00, supported: ['Visa', 'Mastercard', 'Amex', 'PayPal', 'Apple Pay'] }
+  });
+});
+
+// Global Location & Currency Detection Endpoint
+app.get('/api/geo/detect', (req, res) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : req.socket.remoteAddress || '';
+  const countryHeader = (req.headers['x-country-code'] || req.headers['cf-ipcountry'] || '').toString().toUpperCase();
+  const acceptLang = (req.headers['accept-language'] || '').toLowerCase();
+
+  const isEthiopia = countryHeader === 'ET' || 
+    acceptLang.includes('am-et') || 
+    acceptLang.includes('om-et') || 
+    acceptLang.includes('ti-et') ||
+    (acceptLang.startsWith('am') || acceptLang.startsWith('om'));
+
+  const countryCode = isEthiopia ? 'ET' : (countryHeader && countryHeader.length === 2 ? countryHeader : 'GLOBAL');
+  const currency = isEthiopia ? 'ETB' : 'USD';
+  const currencySymbol = isEthiopia ? 'ETB' : '$';
+
+  res.json({
+    countryCode,
+    currency,
+    currencySymbol,
+    isEthiopia,
+    ip: ip.replace(/^.*:/, ''),
+    exchangeRateRef: {
+      usdToEtb: 125.0,
+      note: '1 USD ≈ 125 ETB subsidized medical education tier'
+    },
+    supportedPaymentMethods: isEthiopia
+      ? ['Telebirr', 'CBE Mobile', 'CBE Birr (*847#)', 'Awash', 'Dashen', 'Chapa']
+      : ['International Visa / Mastercard', 'American Express', 'PayPal', 'Stripe', 'Apple Pay', 'Google Pay', 'SWIFT Wire']
   });
 });
 
@@ -1275,6 +1314,9 @@ app.post('/api/auth/google', async (req, res) => {
 
 // CPD Accreditation & License Cycle Tracking Router (/api/users/:userId/cpd-status)
 app.use('/api', cpdRouter);
+
+// Main global compliance strategy verification endpoint
+app.post('/api/v1/compliance/verify', verifyGlobalCompliance);
 
 // In-memory persistent letters store for Admin Portal & Corporate Invitations
 let lettersStore: SponsorInvitationLetter[] = [...initialSponsorLetters];

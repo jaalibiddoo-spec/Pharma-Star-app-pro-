@@ -3,18 +3,21 @@ import confetti from 'canvas-confetti';
 import { cpdModulesData } from '../data/cpdModulesData';
 import { get20QuestionsForModule } from '../data/cpdExpandedQuestions';
 import { CPDModule, CPDQuizQuestion, IssuedCPDCertificate, PaymentMethodType } from '../types';
+import { generatePdfCertificate } from '../utils/generatePdfCertificate';
 import { 
   Award, CheckCircle2, XCircle, ShieldCheck, Landmark, Smartphone, 
   CreditCard, Zap, Printer, Download, QrCode, FileText, ChevronRight, 
   RotateCcw, Sparkles, AlertCircle, Building2, Wallet, Globe, Check, Copy, X,
   ChevronLeft, Eye
 } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface CPDModuleHubProps {
   onOpenConsultation?: () => void;
 }
 
 export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }) => {
+  const { isEthiopia, currency, formatPrice } = useCurrency();
   const [activeTab, setActiveTab] = useState<'modules' | 'wallet' | 'cycle_status'>('modules');
   const [selectedModule, setSelectedModule] = useState<CPDModule | null>(null);
   const [cpdCycleData, setCpdCycleData] = useState<any>(null);
@@ -33,14 +36,52 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [candidateName, setCandidateName] = useState('Pharmacist Dawid Aliyi');
   const [candidateLicense, setCandidateLicense] = useState('ETH-EFDA-PHARM-2026-8819');
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('cbe');
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>(() => isEthiopia ? 'cbe' : 'card_international');
   const [paymentRef, setPaymentRef] = useState('');
   const [isGeneratingCert, setIsGeneratingCert] = useState(false);
+
+  useEffect(() => {
+    if (!isEthiopia && selectedMethod !== 'card_international' && selectedMethod !== 'chapa') {
+      setSelectedMethod('card_international');
+    }
+  }, [isEthiopia]);
 
   // Certificate Viewer Modal
   const [viewingCertificate, setViewingCertificate] = useState<IssuedCPDCertificate | null>(null);
   const [savedCertificates, setSavedCertificates] = useState<IssuedCPDCertificate[]>([]);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Global Compliance Strategy Engine State (/api/v1/compliance/verify)
+  const [globalCountryCode, setGlobalCountryCode] = useState('ET');
+  const [globalLang, setGlobalLang] = useState('en');
+  const [globalCredits, setGlobalCredits] = useState(30);
+  const [globalHours, setGlobalHours] = useState(20);
+  const [globalComplianceResult, setGlobalComplianceResult] = useState<any>(null);
+  const [isVerifyingGlobal, setIsVerifyingGlobal] = useState(false);
+
+  const handleVerifyGlobalCompliance = async () => {
+    setIsVerifyingGlobal(true);
+    try {
+      const res = await fetch('/api/v1/compliance/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-country-code': globalCountryCode,
+          'accept-language': globalLang
+        },
+        body: JSON.stringify({
+          credits: Number(globalCredits),
+          hours: Number(globalHours)
+        })
+      });
+      const data = await res.json();
+      setGlobalComplianceResult(data);
+    } catch (e) {
+      // fallback
+    } finally {
+      setIsVerifyingGlobal(false);
+    }
+  };
 
   // Load saved certificates from localStorage on mount
   useEffect(() => {
@@ -64,6 +105,50 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
       })
       .catch(() => {})
       .finally(() => setIsLoadingCycle(false));
+
+    // Fetch user profile and stored module completion details from database
+    fetch('/api/users/usr-demo-dawid/completions')
+      .then(res => res.json())
+      .then(result => {
+        if (result?.success && result?.data) {
+          if (result.data.user) {
+            if (result.data.user.fullName || result.data.user.name) {
+              setCandidateName(result.data.user.fullName || result.data.user.name);
+            }
+            if (result.data.user.licenseNumber) {
+              setCandidateLicense(result.data.user.licenseNumber);
+            }
+          }
+          if (Array.isArray(result.data.completions) && result.data.completions.length > 0) {
+            setSavedCertificates(prev => {
+              const existingCodes = new Set(prev.map(c => c.courseCode));
+              const dbCerts: IssuedCPDCertificate[] = result.data.completions
+                .filter((comp: any) => comp.course && !existingCodes.has(comp.course.title?.split(':')[0]?.trim() || comp.courseId))
+                .map((comp: any, idx: number) => ({
+                  id: `db-cert-${comp.id || idx}`,
+                  certificateNumber: `EFDA-CPD-2026-${comp.course?.id || 'COMP'}-${10000 + idx}`,
+                  candidateName: result.data.user?.fullName || 'Pharmacist Dawid Aliyi',
+                  licenseNumber: result.data.user?.licenseNumber || 'ETH-EFDA-PHARM-2026-8819',
+                  courseCode: comp.course?.title?.split(':')[0]?.trim() || 'PHARM-401',
+                  courseTitle: comp.course?.title || 'Clinical Pharmacotherapy',
+                  ceuCredits: comp.earnedCeu || 15,
+                  scoreAchievedPercent: comp.scorePercent || 90,
+                  issueDate: new Date(comp.completedAt || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                  expiryDate: new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                  issuerName: "Pharmacist Dawid Aliyi, B.Pharm, BCPS",
+                  issuerTitle: "Director of Clinical Continuing Education",
+                  institution: "Pharmastar Clinical Pharmacy Academy",
+                  accreditationBody: "EFDA & Ethiopian Ministry of Health (MoH) CPD Council",
+                  paymentReference: `DB-REC-${comp.id}`,
+                  feePaidETB: 300,
+                  status: 'verified' as const
+                }));
+              return [...prev, ...dbCerts];
+            });
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const saveCertificate = (cert: IssuedCPDCertificate) => {
@@ -170,6 +255,20 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
       status: 'verified'
     };
 
+    // Save completion record to database
+    fetch('/api/users/usr-demo-dawid/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        courseId: selectedModule.id || selectedModule.courseCode,
+        courseCode: selectedModule.courseCode,
+        courseTitle: selectedModule.courseTitle,
+        earnedCeu: selectedModule.ceuCredits,
+        scorePercent: quizScore,
+        isEthics: selectedModule.isEthics || selectedModule.courseCode.includes('ETHICS')
+      })
+    }).catch(() => {});
+
     setTimeout(() => {
       saveCertificate(newCert);
       setIsGeneratingCert(false);
@@ -187,6 +286,10 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
 
   const handlePrintCertificate = () => {
     window.print();
+  };
+
+  const handleDownloadCertificate = (cert: IssuedCPDCertificate) => {
+    generatePdfCertificate(cert);
   };
 
   return (
@@ -293,7 +396,7 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                         {module.ceuCredits} CEU Credits
                       </span>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
-                        {module.standardFeeETB} ETB
+                        {isEthiopia ? `${module.standardFeeETB} ETB` : `$${module.internationalFeeUSD || 4}.00 USD`}
                       </span>
                     </div>
                   </div>
@@ -326,16 +429,29 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                   </div>
 
                   {hasCertificate ? (
-                    <button
-                      onClick={() => {
-                        const cert = savedCertificates.find(c => c.courseCode === module.courseCode);
-                        if (cert) setViewingCertificate(cert);
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-1.5 hover:bg-emerald-600/40 transition cursor-pointer"
-                    >
-                      <Award className="w-4 h-4 text-emerald-400" />
-                      <span>View Earned Certificate</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const cert = savedCertificates.find(c => c.courseCode === module.courseCode);
+                          if (cert) handleDownloadCertificate(cert);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow transition cursor-pointer"
+                        title="Download client-side PDF certificate"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download Certificate</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const cert = savedCertificates.find(c => c.courseCode === module.courseCode);
+                          if (cert) setViewingCertificate(cert);
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-1 hover:bg-emerald-600/40 transition cursor-pointer"
+                      >
+                        <Award className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>View</span>
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={() => handleStartQuiz(module)}
@@ -415,13 +531,23 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
 
                   <div className="flex items-center justify-between gap-2 pt-2">
                     <span className="text-[11px] text-slate-400">Signed by Pharm. Dawid Aliyi, BCPS</span>
-                    <button
-                      onClick={() => setViewingCertificate(cert)}
-                      className="px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>Print / Download PDF</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleDownloadCertificate(cert)}
+                        className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow transition cursor-pointer"
+                        title="Download client-side PDF certificate"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download Certificate</span>
+                      </button>
+                      <button
+                        onClick={() => setViewingCertificate(cert)}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View / Print</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -566,6 +692,117 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                 <span>Complete Modules to Close Shortfall</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
+            </div>
+
+            {/* Global Compliance Strategy Engine Interactive Terminal */}
+            <div className="bg-slate-950 p-5 rounded-2xl border border-teal-500/30 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                      POST /api/v1/compliance/verify
+                    </span>
+                    <span className="text-xs font-bold text-white">Dynamic Global Compliance Strategy Engine</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Resolves jurisdictional CPD rules via <code className="text-teal-400 font-mono">ComplianceFactory</code> (Ethiopia MoH 30 CEU baseline vs. International 15 CEU / 10 Hr standard) with localized Afaan Oromoo &amp; English translation.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleVerifyGlobalCompliance}
+                  disabled={isVerifyingGlobal}
+                  className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shadow transition cursor-pointer"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>{isVerifyingGlobal ? 'Evaluating...' : 'Run Global Verification'}</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Jurisdiction (Country):</label>
+                  <select
+                    value={globalCountryCode}
+                    onChange={(e) => setGlobalCountryCode(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-semibold"
+                  >
+                    <option value="ET">Ethiopia (ET - MoH Directive 49/2022)</option>
+                    <option value="US">United States (US - ACPE / NABP Standard)</option>
+                    <option value="GB">United Kingdom (GB - GPhC Standard)</option>
+                    <option value="GLOBAL">Generic Global Standard (15 CEU / 10 Hrs)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Locale / Language:</label>
+                  <select
+                    value={globalLang}
+                    onChange={(e) => setGlobalLang(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-semibold"
+                  >
+                    <option value="en">English (en)</option>
+                    <option value="om">Afaan Oromoo (om)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Earned Credits (CEU):</label>
+                  <input
+                    type="number"
+                    value={globalCredits}
+                    onChange={(e) => setGlobalCredits(Number(e.target.value))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Logged Hours:</label>
+                  <input
+                    type="number"
+                    value={globalHours}
+                    onChange={(e) => setGlobalHours(Number(e.target.value))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              {globalComplianceResult && (
+                <div className={`p-4 rounded-xl border text-xs space-y-2 ${
+                  globalComplianceResult.details?.isValid
+                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
+                    : 'bg-amber-950/40 border-amber-500/40 text-amber-200'
+                }`}>
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="flex items-center gap-1.5">
+                      {globalComplianceResult.details?.isValid ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-amber-400" />
+                      )}
+                      <span>Jurisdiction [{globalComplianceResult.countryCode}]: {globalComplianceResult.status}</span>
+                    </span>
+                    <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-black/40">
+                      {globalComplianceResult.details?.isValid ? 'COMPLIANT (APPROVED)' : 'NON-COMPLIANT (ACTION REQUIRED)'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] pt-1">
+                    <div>
+                      <span className="text-slate-400 block">Missing Credits:</span>
+                      <span className="font-mono font-bold">{globalComplianceResult.details?.missingCredits ?? 0} CEUs</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">Satisfied Quotas:</span>
+                      <span className="font-semibold">{globalComplianceResult.details?.requirementsMet?.join(', ') || 'None'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">Engine Resolution:</span>
+                      <span>{globalCountryCode === 'ET' ? 'EthiopiaComplianceStrategy' : 'GenericGlobalStrategy'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -776,7 +1013,7 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                           className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-xl transition cursor-pointer"
                         >
                           <Award className="w-4 h-4" />
-                          <span>Issue Official Certificate ({selectedModule.standardFeeETB} ETB)</span>
+                          <span>Issue Official Certificate ({isEthiopia ? `${selectedModule.standardFeeETB} ETB` : `$${selectedModule.internationalFeeUSD || 4}.00 USD`})</span>
                         </button>
                       )}
 
@@ -919,7 +1156,7 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-300 text-[11px] uppercase tracking-wide">
-                    2. Select Payment Method (Fee: {selectedModule.standardFeeETB} ETB / ${selectedModule.internationalFeeUSD} USD)
+                    2. Select Payment Method (Fee: {isEthiopia ? `${selectedModule.standardFeeETB} ETB` : `$${selectedModule.internationalFeeUSD || 4}.00 USD`})
                   </span>
                   <span className="text-[10px] text-teal-400 font-bold bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
                     All Methods Allowed
@@ -1001,7 +1238,9 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                       <span className="text-[11px] text-slate-400 block">Recipient / Beneficiary:</span>
                       <strong className="text-white text-xs">Pharmacist Dawid Aliyi</strong>
                     </div>
-                    <span className="text-amber-400 font-bold text-xs">{selectedModule.standardFeeETB} ETB</span>
+                    <span className="text-amber-400 font-bold text-xs">
+                      {isEthiopia ? `${selectedModule.standardFeeETB} ETB` : `$${selectedModule.internationalFeeUSD || 4}.00 USD`}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">
@@ -1083,11 +1322,19 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
 
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => viewingCertificate && handleDownloadCertificate(viewingCertificate)}
+                  className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow transition cursor-pointer"
+                  title="Client-side PDF certificate download"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Certificate</span>
+                </button>
+                <button
                   onClick={handlePrintCertificate}
                   className="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
-                  <span>Print / Save as PDF</span>
+                  <span>Print Canvas</span>
                 </button>
                 <button
                   onClick={() => setViewingCertificate(null)}

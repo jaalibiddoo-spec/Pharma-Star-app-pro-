@@ -12,6 +12,9 @@ import {
 } from 'lucide-react';
 import { coursesData } from '../data/coursesData';
 import { Language, User } from '../types';
+import { AdminSponsorLettersModal } from './AdminSponsorLettersModal';
+import { useCurrency } from '../context/CurrencyContext';
+import { CountryCurrencySelector } from './CountryCurrencySelector';
 
 interface OfficialWebsiteProps {
   onLaunchApp: (tab?: string) => void;
@@ -36,9 +39,11 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
   isPro,
   currentUser
 }) => {
+  const { isEthiopia, currency, formatPrice } = useCurrency();
   const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
-  const [activeFeatureTab, setActiveFeatureTab] = useState<'cpd' | 'courses' | 'abc_ven' | 'dtp_interventions' | 'store_ifrr' | 'prescriptions' | 'research' | 'moa3d' | 'clinical' | 'consult' | 'offline'>('cpd');
+  const [activeFeatureTab, setActiveFeatureTab] = useState<'cpd' | 'telehealth_guidelines' | 'sponsorship_portal' | 'courses' | 'abc_ven' | 'dtp_interventions' | 'store_ifrr' | 'prescriptions' | 'research' | 'moa3d' | 'clinical' | 'consult' | 'offline'>('cpd');
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(0);
+  const [isSponsorLettersOpen, setIsSponsorLettersOpen] = useState(false);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -48,6 +53,8 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
 
   const featureTabs = [
     { id: 'cpd', title: 'EFDA CPD & Cycle Status', icon: Award, subtitle: 'Directive No. 49/2022 renewal audit' },
+    { id: 'telehealth_guidelines', title: 'Telemedicine & Telepharmacy Directives', icon: Video, subtitle: 'MoH & EFDA statutory standards' },
+    { id: 'sponsorship_portal', title: 'Sponsors & Non-Gov History', icon: Building2, subtitle: 'Platinum, Gold, Bronze Non-Gov' },
     { id: 'abc_ven', title: 'ABC & VEN Analysis (DTC)', icon: Scale, subtitle: 'Pareto 80/20 & FSML Master PDF' },
     { id: 'dtp_interventions', title: 'DTP Reports & SBAR', icon: AlertTriangle, subtitle: 'Quick export & clinical report' },
     { id: 'courses', title: '12 Courses + Gemini AI', icon: BookOpen, subtitle: 'First course free for everyone!' },
@@ -72,6 +79,10 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
     {
       q: 'Can Pharma Star App Pro run in rural health centers without internet access?',
       a: 'Yes! The entire application is built with a standalone 142MB Offline Database Engine utilizing browser IndexedDB, LocalStorage, and Progressive Web App (PWA) service workers. All 10 courses, drug interaction matrices, laboratory calculation algorithms, and guidelines work 100% offline in remote hospital wards and rural dispensaries.'
+    },
+    {
+      q: 'Does Pharma Star App Pro work in any country worldwide?',
+      a: 'Yes! Pharma Star App Pro is engineered to run seamlessly across all countries and geographic locations worldwide. Users in Ethiopia automatically see and pay in Ethiopian Birr (ETB) using Telebirr (0982852778), CBE (1000262900367), or CBE Birr (*847#). Users in all other international locations automatically see and pay in US Dollars ($USD) with Visa, Mastercard, American Express, PayPal, and Apple Pay. You can also switch your country and currency anytime via the interactive Country & Currency selector.'
     },
     {
       q: 'Who is the lead developer and author of Pharma Star App Pro?',
@@ -115,7 +126,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
                 className="px-2.5 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-[11px] transition cursor-pointer flex items-center gap-1"
               >
                 <Zap className="w-3 h-3 text-amber-400" />
-                <span>Auto-Register (1,000 Birr / $10 USD)</span>
+                <span>{isEthiopia ? 'Auto-Register (1,000 Birr)' : 'Auto-Register ($10.00 USD)'}</span>
               </button>
             )}
 
@@ -173,6 +184,8 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            <CountryCurrencySelector />
+
             <button
               onClick={onOpenInstallModal}
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition cursor-pointer"
@@ -229,7 +242,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
                 className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-teal-300 border border-teal-500/40 font-bold text-sm transition shadow flex items-center gap-2 cursor-pointer"
               >
                 <Award className="w-4 h-4 text-teal-400" />
-                <span>Enroll in EFDA CPD (200-500 ETB)</span>
+                <span>{isEthiopia ? 'Enroll in EFDA CPD (200-500 ETB)' : 'Enroll in EFDA CPD ($2.00 - $5.00 USD)'}</span>
               </button>
 
               <button
@@ -237,7 +250,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
                 className="px-5 py-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-sm transition flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-amber-400" />
-                <span>Get Pro (1,000 Birr / $10 USD)</span>
+                <span>{isEthiopia ? 'Get Pro (1,000 Birr / $10 USD)' : 'Get Pro ($10.00 USD / 1,000 ETB)'}</span>
               </button>
             </div>
 
@@ -273,8 +286,12 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
               <div className="text-xs text-slate-400 font-semibold mt-1">Full Offline Engine (No Internet Required)</div>
             </div>
             <div className="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl text-center backdrop-blur-sm">
-              <div className="text-2xl md:text-3xl font-black text-amber-400">100 ETB</div>
-              <div className="text-xs text-slate-400 font-semibold mt-1">Lifetime Pro Access (or $1.00 USD)</div>
+              <div className="text-2xl md:text-3xl font-black text-amber-400">
+                {isEthiopia ? '100 ETB' : '$1.00 USD'}
+              </div>
+              <div className="text-xs text-slate-400 font-semibold mt-1">
+                {isEthiopia ? 'Lifetime Pro Access (or $1.00 USD)' : 'Lifetime Pro Access (Worldwide)'}
+              </div>
             </div>
           </div>
 
@@ -830,6 +847,194 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
             </div>
           )}
 
+          {activeFeatureTab === 'telehealth_guidelines' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                    MoH Directive 62/2026 &amp; EFDA Standard
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Statutory Telehealth &amp; Telepharmacy</span>
+                  </span>
+                </div>
+
+                <h3 className="text-2xl font-bold text-white">
+                  Ethiopian National Telemedicine &amp; Telepharmacy Guidelines
+                </h3>
+
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Fully operationalized implementation of the Federal Ministry of Health (MoH) and Ethiopian Food and Drug Authority (EFDA) digital clinical practice directives. Connect hospital clinical pharmacists and physicians with rural dispensaries, remote patients, and healthcare extension posts.
+                </p>
+
+                <div className="space-y-2 text-xs text-slate-300">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
+                    <span><strong>MoH Provider Standards:</strong> Active EFDA/MoH clinician licensure verification, pre-encounter patient identification, and recorded digital informed consent.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
+                    <span><strong>EFDA Telepharmacy &amp; e-Rx Rules:</strong> Electronic prescription digital signature verification, strict prohibition of Schedule II/III narcotics via telehealth, and mandatory virtual MTM counseling.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
+                    <span><strong>Encrypted &amp; Archival:</strong> Peer-to-peer WebRTC video with zero storage of raw streams and 5-year archival of clinical SOAP notes and intervention records.</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <button
+                    onClick={() => onLaunchApp('telemedicine')}
+                    className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs transition flex items-center gap-2 cursor-pointer shadow-lg shadow-teal-500/25"
+                  >
+                    <Video className="w-4 h-4" />
+                    <span>Launch Virtual Telemedicine Suite</span>
+                  </button>
+                  <span className="text-xs text-slate-400">Negotiable fee settlement via Chapa &amp; Telebirr</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800 pb-2">
+                  <span>Directive Compliance Summary</span>
+                  <span className="text-teal-400 font-mono">ETH-MOH-DIR-62</span>
+                </div>
+
+                <div className="space-y-2.5 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-900 border border-teal-500/30 space-y-1">
+                    <div className="flex items-center justify-between text-teal-300 font-bold">
+                      <span>1. Remote MTM &amp; Dispensing:</span>
+                      <span className="text-[10px] bg-teal-500/20 px-2 py-0.5 rounded text-teal-300">Mandatory</span>
+                    </div>
+                    <p className="text-slate-400 text-[11px]">Pharmacist performs drug interaction screening, renal dose adjustments, and live counseling before dispatch.</p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900 border border-amber-500/30 space-y-1">
+                    <div className="flex items-center justify-between text-amber-300 font-bold">
+                      <span>2. Controlled Substances Safeguard:</span>
+                      <span className="text-[10px] bg-amber-500/20 px-2 py-0.5 rounded text-amber-300">Restricted</span>
+                    </div>
+                    <p className="text-slate-400 text-[11px]">Schedule II/III Narcotics require physical triplicate prescription paper; prohibited from automated delivery.</p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                    <div className="flex items-center justify-between text-white font-bold">
+                      <span>3. Emergency Referral (Red Flags):</span>
+                      <span className="text-[10px] bg-rose-500/20 px-2 py-0.5 rounded text-rose-300">STAT Transfer</span>
+                    </div>
+                    <p className="text-slate-400 text-[11px]">Immediate SBAR handover to referral centers (Tikur Anbessa, Jimma, Gondar, Hawassa) for acute emergencies.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeFeatureTab === 'sponsorship_portal' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                    EFDA Ethical Promotion &amp; Compliance
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                    Platinum • Gold • Bronze Non-Gov
+                  </span>
+                </div>
+
+                <h3 className="text-2xl font-bold text-white">
+                  Formal Sponsors Invitation, Non-Government Tiers &amp; Letters History
+                </h3>
+
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Institutional sponsorship architecture tailored for pharmaceutical manufacturers, financial institutions, and Non-Governmental Organizations (NGOs). Includes full compliance auditing (Conflict of Interest declarations, EFDA Directive 49/2022 neutrality, transparent funding disclosures) and automated formal invitation dispatch.
+                </p>
+
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-950 border border-teal-500/40 text-center space-y-1">
+                    <span className="text-[10px] text-teal-400 font-bold block uppercase">Platinum Non-Gov</span>
+                    <span className="font-mono font-bold text-white text-xs">150,000 ETB</span>
+                    <span className="text-[9px] text-slate-400 block">$3,000 USD (500 Licenses)</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-950 border border-amber-500/40 text-center space-y-1">
+                    <span className="text-[10px] text-amber-400 font-bold block uppercase">Gold Non-Gov</span>
+                    <span className="font-mono font-bold text-white text-xs">75,000 ETB</span>
+                    <span className="text-[9px] text-slate-400 block">$1,500 USD (250 Licenses)</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-700 text-center space-y-1">
+                    <span className="text-[10px] text-slate-300 font-bold block uppercase">Bronze Non-Gov</span>
+                    <span className="font-mono font-bold text-white text-xs">35,000 ETB</span>
+                    <span className="text-[9px] text-slate-400 block">$700 USD (100 Licenses)</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <button
+                    onClick={() => setIsSponsorLettersOpen(true)}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs transition flex items-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20"
+                  >
+                    <Building2 className="w-4 h-4" />
+                    <span>Open Admin Letters Directorate &amp; Generator</span>
+                  </button>
+                  <button
+                    onClick={() => onLaunchApp('institutional_sponsor')}
+                    className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>View Institutional Dashboard</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800 pb-2">
+                  <span>Non-Government Compliance &amp; Letters Ledger</span>
+                  <span className="text-amber-400 font-mono">DIR-SPON-2026</span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-900 border border-teal-500/30 flex items-start justify-between gap-3">
+                    <div>
+                      <span className="font-bold text-white block">CHAI Ethiopia (Clinton Health Access)</span>
+                      <span className="text-[11px] text-slate-400">Ref: REF: PS/DIR-SPON/2026/101 • Platinum Non-Government</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Partnered
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900 border border-amber-500/30 flex items-start justify-between gap-3">
+                    <div>
+                      <span className="font-bold text-white">Amref Health Africa - Ethiopia</span>
+                      <span className="text-[11px] text-slate-400 block">Ref: REF: PS/DIR-SPON/2026/104 • Gold Non-Government</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      Meeting
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-start justify-between gap-3">
+                    <div>
+                      <span className="font-bold text-white">Ethiopian Red Cross Society &amp; Health Unit</span>
+                      <span className="text-[11px] text-slate-400 block">Ref: REF: PS/DIR-SPON/2026/108 • Bronze Non-Government</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                      Under Review
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+                  <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>EFDA Ethical Code Certified</span>
+                  </span>
+                  <span>Author: Pharm. Dawid Aliyi, BCPS</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeFeatureTab === 'courses' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
               <div className="space-y-4">
@@ -1221,15 +1426,15 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
                 <div className="space-y-2 text-xs text-slate-300">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-indigo-400" />
-                    <span><strong>Comprehensive Polypharmacy Review:</strong> 350 – 500 ETB</span>
+                    <span><strong>Comprehensive Polypharmacy Review:</strong> {isEthiopia ? '350 – 500 ETB' : '$3.50 – $5.00 USD'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-indigo-400" />
-                    <span><strong>1-on-1 Clinical Case Review:</strong> 500 – 750 ETB</span>
+                    <span><strong>1-on-1 Clinical Case Review:</strong> {isEthiopia ? '500 – 750 ETB' : '$5.00 – $7.50 USD'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-indigo-400" />
-                    <span><strong>Direct Telebirr Payment:</strong> <span className="font-mono font-bold text-teal-300">0982852778</span> (Dawid Aliyi)</span>
+                    <span><strong>Payment Method:</strong> {isEthiopia ? 'Telebirr 0982852778 or CBE 1000262900367' : 'Credit Card, PayPal or Chapa USD'}</span>
                   </div>
                 </div>
                 <button
@@ -1368,16 +1573,20 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="text-xs font-bold text-amber-400 tracking-wider uppercase">Direct Payment Channels</span>
           <h2 className="text-2xl sm:text-4xl font-extrabold text-white mt-2">
-            Seamless Ethiopian & International Payments
+            Seamless Ethiopian &amp; International Payments
           </h2>
           <p className="text-slate-400 text-sm mt-3">
-            Register your pro account, purchase accredited EFDA CPD certificates, or book a consultation via Telebirr or CBE.
+            {isEthiopia 
+              ? 'Register your pro account, purchase accredited EFDA CPD certificates, or book a consultation via Telebirr or CBE.' 
+              : 'Register your pro account, purchase accredited EFDA CPD certificates, or access clinical tools worldwide via Visa, Mastercard, PayPal, or Chapa.'}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {/* Channel 1: Telebirr */}
-          <div className="bg-slate-900 border border-teal-500/40 rounded-3xl p-6 relative flex flex-col justify-between shadow-lg shadow-teal-500/5">
+          {/* Channel 1: Telebirr (or International Card if outside Ethiopia) */}
+          <div className={`bg-slate-900 border rounded-3xl p-6 relative flex flex-col justify-between shadow-lg ${
+            isEthiopia ? 'border-teal-500/40 shadow-teal-500/5' : 'border-slate-800'
+          }`}>
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-300 flex items-center justify-center font-black text-xl">
                 📱
@@ -1434,7 +1643,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">Commercial Bank of Ethiopia</h3>
-                <p className="text-xs text-slate-400 mt-1">CBE Mobile Banking & Branch Deposits</p>
+                <p className="text-xs text-slate-400 mt-1">CBE Mobile Banking &amp; Branch Deposits</p>
               </div>
 
               <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-1">
@@ -1477,60 +1686,75 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
           </div>
 
           {/* Channel 3: International / USD */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 relative flex flex-col justify-between">
+          <div className={`bg-slate-900 border rounded-3xl p-6 relative flex flex-col justify-between shadow-lg ${
+            !isEthiopia ? 'border-cyan-500/50 shadow-cyan-500/10 ring-1 ring-cyan-500/30' : 'border-slate-800'
+          }`}>
+            {!isEthiopia && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-cyan-500 text-slate-950 font-black text-[10px] uppercase tracking-wider shadow">
+                Recommended for your location
+              </div>
+            )}
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-black text-xl">
                 🌐
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">International & Diaspora</h3>
-                <p className="text-xs text-slate-400 mt-1">Credit Card, Chapa, PayPal</p>
+                <h3 className="text-lg font-bold text-white">International &amp; Worldwide</h3>
+                <p className="text-xs text-slate-400 mt-1">Visa, Mastercard, PayPal, Apple Pay, Chapa</p>
               </div>
 
               <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-1">
                 <div className="text-[11px] text-slate-400">Lifetime Registration:</div>
-                <div className="text-lg font-black text-cyan-300">$10.00 USD / 1,000 ETB</div>
-                <div className="text-xs text-slate-400">Chapa gateway &amp; global debit/credit cards accepted</div>
+                <div className="text-lg font-black text-cyan-300">
+                  {isEthiopia ? '1,000 ETB / $10.00 USD' : '$10.00 USD (or 1,000 ETB)'}
+                </div>
+                <div className="text-xs text-slate-400">Global credit/debit cards &amp; PayPal accepted</div>
               </div>
 
               <p className="text-xs text-slate-400">
-                Instantly activated for pharmacists, preceptors, and diaspora members worldwide via Chapa.
+                Instantly activated for pharmacists, medical practitioners, and researchers worldwide.
               </p>
             </div>
 
             <button
               onClick={onOpenSubModal}
-              className="mt-6 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 border border-slate-700 cursor-pointer"
+              className={`mt-6 w-full py-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow ${
+                !isEthiopia 
+                  ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950' 
+                  : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
+              }`}
             >
-              <CreditCard className="w-4 h-4 text-cyan-400" />
-              <span>Pay Online with Chapa ($10 USD)</span>
+              <CreditCard className="w-4 h-4 text-current" />
+              <span>{isEthiopia ? 'Pay Online with Chapa ($10 USD)' : 'Pay with Card / PayPal ($10.00 USD)'}</span>
             </button>
           </div>
         </div>
 
         {/* Institutional & Academic Tier Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mt-6">
-          {/* Institutional Subscription Tier: 2,000 ETB / Year */}
+          {/* Institutional Subscription Tier */}
           <div className="bg-gradient-to-br from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-500/40 rounded-3xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  Annual Hospital & Organization Pass
+                  Annual Hospital &amp; Organization Pass
                 </span>
-                <span className="text-xl font-black text-indigo-300">2,000 ETB / Year</span>
+                <span className="text-xl font-black text-indigo-300">
+                  {isEthiopia ? '2,000 ETB / Year' : '$20.00 USD / Year'}
+                </span>
               </div>
-              <h3 className="text-lg font-bold text-white">Institutions & Specific Sites Communication Portal</h3>
+              <h3 className="text-lg font-bold text-white">Institutions &amp; Specific Sites Communication Portal</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
                 Connect your entire hospital, health center, or university pharmacy department. Includes STAT interprofessional provider channels, regional drug shortage cross-exchange, and EFDA regulatory alerts.
               </p>
               <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1 text-xs">
                 <div className="text-slate-300 flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Unlimited Healthcare Providers, Pharmacists & Nurses</span>
+                  <span>Unlimited Healthcare Providers, Pharmacists &amp; Nurses</span>
                 </div>
                 <div className="text-slate-300 flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Telebirr: <strong>0982852778</strong> | CBE: <strong>1000262900367</strong> (Dawid Aliyi)</span>
+                  <span>{isEthiopia ? 'Telebirr: 0982852778 | CBE: 1000262900367 (Dawid Aliyi)' : 'International Cards, PayPal & Global Invoicing'}</span>
                 </div>
               </div>
             </div>
@@ -1540,27 +1764,29 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
               className="mt-5 w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition cursor-pointer"
             >
               <Building2 className="w-4 h-4" />
-              <span>Subscribe Institution (2,000 Birr/Year)</span>
+              <span>{isEthiopia ? 'Subscribe Institution (2,000 Birr/Year)' : 'Subscribe Institution ($20.00 USD/Year)'}</span>
             </button>
           </div>
 
-          {/* Research Publishing Tier: 1,000 ETB */}
+          {/* Research Publishing Tier */}
           <div className="bg-gradient-to-br from-teal-950/60 via-slate-900 to-slate-900 border border-teal-500/40 rounded-3xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
                   Institutional Research Publishing
                 </span>
-                <span className="text-xl font-black text-teal-300">1,000 ETB / Paper</span>
+                <span className="text-xl font-black text-teal-300">
+                  {isEthiopia ? '1,000 ETB / Paper' : '$10.00 USD / Paper'}
+                </span>
               </div>
-              <h3 className="text-lg font-bold text-white">Ethiopian Institutions Research Publishing Portal</h3>
+              <h3 className="text-lg font-bold text-white">Institutions &amp; Global Research Publishing Portal</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Publish peer-reviewed manuscripts upon request by Ethiopian institutions (AAU, Jimma, Gondar, Hawassa, Haramaya, SPHMMC, EPHI). Verified DOI assignment and publication certificates.
+                Publish peer-reviewed manuscripts upon request by Ethiopian institutions (AAU, Jimma, Gondar, Hawassa, Haramaya, SPHMMC, EPHI) and international collaborative bodies. Verified DOI assignment and publication certificates.
               </p>
               <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1 text-xs">
                 <div className="text-slate-300 flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Official DOI & Indexed in National Medical Journal</span>
+                  <span>Official DOI &amp; Indexed in National Medical Journal</span>
                 </div>
                 <div className="text-slate-300 flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
@@ -1574,7 +1800,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
               className="mt-5 w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition cursor-pointer"
             >
               <BookMarked className="w-4 h-4" />
-              <span>Submit Manuscript (1,000 Birr)</span>
+              <span>{isEthiopia ? 'Submit Manuscript (1,000 Birr)' : 'Submit Manuscript ($10.00 USD)'}</span>
             </button>
           </div>
         </div>
@@ -1707,8 +1933,12 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
               <span className="text-base font-black text-white">Pharma Star App Pro</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Ethiopia's premier evidence-based clinical pharmacy and continuing education suite. Designed and authored by Pharmacist Dawid Aliyi.
+              Global clinical pharmacy and continuing medical education suite authored by Pharmacist Dawid Aliyi. Operating in ETB for Ethiopia and USD worldwide.
             </p>
+            <div className="pt-1">
+              <span className="text-[10px] text-slate-400 block mb-1">Country &amp; Currency:</span>
+              <CountryCurrencySelector />
+            </div>
           </div>
 
           <div>
@@ -1716,9 +1946,11 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
             <ul className="space-y-2 text-xs">
               <li><button onClick={() => onLaunchApp('courses')} className="hover:text-teal-300 transition cursor-pointer">10 Core Courses</button></li>
               <li><button onClick={() => onLaunchApp('cpd_modules')} className="hover:text-teal-300 transition cursor-pointer">EFDA / MoH CPD Points</button></li>
+              <li><button onClick={() => onLaunchApp('telemedicine')} className="hover:text-teal-300 transition cursor-pointer">Telemedicine &amp; Telepharmacy Room</button></li>
+              <li><button onClick={() => setIsSponsorLettersOpen(true)} className="hover:text-amber-300 text-amber-400 font-bold transition cursor-pointer flex items-center gap-1"><Building2 className="w-3 h-3 text-amber-400" /> Sponsor Invitations &amp; Letters History</button></li>
               <li><button onClick={() => onLaunchApp('moa3d')} className="hover:text-teal-300 transition cursor-pointer">3D Molecular MOA Visualizer</button></li>
               <li><button onClick={() => onLaunchApp('drug_checker')} className="hover:text-teal-300 transition cursor-pointer">Drug Interaction Checker</button></li>
-              <li><button onClick={() => onLaunchApp('wiki')} className="hover:text-teal-300 transition cursor-pointer">Pharmacy Wiki & Calculators</button></li>
+              <li><button onClick={() => onLaunchApp('wiki')} className="hover:text-teal-300 transition cursor-pointer">Pharmacy Wiki &amp; Calculators</button></li>
             </ul>
           </div>
 
@@ -1728,7 +1960,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
               <li>Telebirr: <strong className="text-teal-300 font-mono">0982852778</strong> (Dawid Aliyi)</li>
               <li>CBE: <strong className="text-amber-300 font-mono">1000262900367</strong></li>
               <li>CBE Birr: <strong className="text-white font-mono">*847#</strong></li>
-              <li>Registration Fee: <strong className="text-white">1,000 Birr / $10.00 USD (Chapa, Telebirr, CBE)</strong></li>
+              <li>Registration Fee: <strong className="text-white">{isEthiopia ? '1,000 Birr (Telebirr, CBE)' : '$10.00 USD (Cards, PayPal)'}</strong></li>
             </ul>
           </div>
 
@@ -1777,7 +2009,11 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
             Pharma Star App Pro © {new Date().getFullYear()} Pharmacist Dawid Aliyi. All rights reserved.
           </div>
           <div className="flex items-center gap-4">
-            <span>Aligned with EFDA, MoH, WHO & FIP</span>
+            <span>Aligned with EFDA, MoH, WHO &amp; FIP</span>
+            <span>•</span>
+            <button onClick={() => setIsSponsorLettersOpen(true)} className="text-amber-400 hover:underline cursor-pointer">
+              Admin Sponsor Portal
+            </button>
             <span>•</span>
             <button onClick={onOpenDevDownload} className="text-slate-400 hover:text-amber-300 cursor-pointer">
               Download App Package (For Dawid)
@@ -1785,6 +2021,12 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
           </div>
         </div>
       </footer>
+
+      {/* Admin Sponsor Directorate & Letters History Modal */}
+      <AdminSponsorLettersModal
+        isOpen={isSponsorLettersOpen}
+        onClose={() => setIsSponsorLettersOpen(false)}
+      />
     </div>
   );
 };

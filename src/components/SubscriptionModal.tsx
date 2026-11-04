@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Sparkles, CheckCircle2, Copy, Check, ShieldCheck, 
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { PaymentMethodType, User } from '../types';
 import { validatePaymentReference } from '../utils/paymentValidator';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -19,8 +20,18 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   onClose,
   onUpgradeSuccess
 }) => {
-  const [selectedCurrency, setSelectedCurrency] = useState<'ETB' | 'USD'>('ETB');
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('chapa');
+  const { currency: globalCurrency, isEthiopia, country } = useCurrency();
+  const [selectedCurrency, setSelectedCurrency] = useState<'ETB' | 'USD'>(globalCurrency);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>(
+    isEthiopia ? 'chapa' : 'card_international'
+  );
+
+  useEffect(() => {
+    setSelectedCurrency(globalCurrency);
+    if (!isEthiopia) {
+      setSelectedMethod('card_international');
+    }
+  }, [globalCurrency, isEthiopia]);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [transactionRef, setTransactionRef] = useState('');
   const [payerName, setPayerName] = useState('');

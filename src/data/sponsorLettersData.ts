@@ -22,7 +22,16 @@ export const initialSponsorLetters: SponsorInvitationLetter[] = [
     status: "Partnered",
     signatoryName: "Pharmacist Dawid Aliyi, B.Pharm, BCPS",
     signatoryTitle: "Director of Academic Affairs & Clinical Operations",
-    lastUpdated: "2026-10-28T14:20:00Z"
+    lastUpdated: "2026-10-28T14:20:00Z",
+    compliance: {
+      complianceStatus: 'Compliant & Verified',
+      conflictOfInterestDeclared: true,
+      efdaEthicalPromotionCertified: true,
+      contentNeutralityPledgeSigned: true,
+      neutralityAuditor: 'EFDA Ethics Committee',
+      auditDate: '2026-10-22',
+      transparencyAuditReportId: 'AUD-EFDA-2026-088'
+    }
   },
   {
     id: "spon-let-002",
@@ -45,7 +54,16 @@ export const initialSponsorLetters: SponsorInvitationLetter[] = [
     status: "Meeting Scheduled",
     signatoryName: "Pharmacist Dawid Aliyi, B.Pharm, BCPS",
     signatoryTitle: "Director of Academic Affairs & Clinical Operations",
-    lastUpdated: "2026-10-30T10:00:00Z"
+    lastUpdated: "2026-10-30T10:00:00Z",
+    compliance: {
+      complianceStatus: 'Compliant & Verified',
+      conflictOfInterestDeclared: true,
+      efdaEthicalPromotionCertified: true,
+      contentNeutralityPledgeSigned: true,
+      neutralityAuditor: 'Independent Academic Review Panel',
+      auditDate: '2026-10-26',
+      transparencyAuditReportId: 'AUD-ACAD-2026-104'
+    }
   },
   {
     id: "spon-let-003",
@@ -92,5 +110,101 @@ export const initialSponsorLetters: SponsorInvitationLetter[] = [
     signatoryName: "Pharmacist Dawid Aliyi, B.Pharm, BCPS",
     signatoryTitle: "Director of Academic Affairs & Clinical Operations",
     lastUpdated: "2026-11-01T16:00:00Z"
+  },
+  {
+    id: "spon-let-005",
+    referenceNo: "REF: PS/DIR-SPON/2026/101",
+    date: "November 2, 2026",
+    recipientName: "Dr. Tedros Solomon",
+    recipientTitle: "Country Director",
+    organization: "Clinton Health Access Initiative (CHAI) Ethiopia",
+    organizationCategory: "Non-Governmental Organization (NGO)",
+    city: "Addis Ababa (Bole)",
+    country: "Ethiopia",
+    recipientEmail: "ethiopia@clintonhealthaccess.org",
+    recipientPhone: "+251 11 661 5566",
+    sponsorTier: "Platinum Non-Government Sponsor",
+    contributionETB: 150000,
+    contributionUSD: 3000,
+    focusArea: "Decentralized Telepharmacy, Paediatric ARV Optimization & Essential Oxygen Ecosystems in Remote Primary Hospitals",
+    customNotes: "Inviting CHAI as an anchor Non-Government Platinum Sponsor to underwrite 500 rural health post clinical practitioners and support national pediatric guideline dissemination.",
+    dispatchedAt: "2026-11-02T10:00:00Z",
+    status: "Partnered",
+    signatoryName: "Pharmacist Dawid Aliyi, B.Pharm, BCPS",
+    signatoryTitle: "Director of Academic Affairs & Clinical Operations",
+    lastUpdated: "2026-11-02T17:30:00Z",
+    compliance: {
+      complianceStatus: 'Compliant & Verified',
+      conflictOfInterestDeclared: true,
+      efdaEthicalPromotionCertified: true,
+      contentNeutralityPledgeSigned: true,
+      neutralityAuditor: 'MoH Non-Government Health Partnership Directorate',
+      auditDate: '2026-11-02',
+      transparencyAuditReportId: 'AUD-NGO-PLAT-2026-001'
+    }
+  },
+  {
+    id: "spon-let-006",
+    referenceNo: "REF: PS/DIR-SPON/2026/104",
+    date: "November 3, 2026",
+    recipientName: "Dr. Misrak Tadesse",
+    recipientTitle: "Country Representative & Head of Programs",
+    organization: "Amref Health Africa - Ethiopia",
+    organizationCategory: "Non-Governmental Organization (NGO)",
+    city: "Addis Ababa (Kirkos)",
+    country: "Ethiopia",
+    recipientEmail: "info.ethiopia@amref.org",
+    recipientPhone: "+251 11 662 7851",
+    sponsorTier: "Gold Non-Government Sponsor",
+    contributionETB: 75000,
+    contributionUSD: 1500,
+    focusArea: "Maternal-Fetal Clinical Pharmacotherapy, Postpartum Hemorrhage Prevention & Community Health Extension Training",
+    customNotes: "Subsidizing 250 mid-level clinical pharmacists and clinical druggists working in maternal and child health wards across agrarian and pastoralist regions.",
+    dispatchedAt: "2026-11-03T08:45:00Z",
+    status: "Meeting Scheduled",
+    signatoryName: "Pharmacist Dawid Aliyi, B.Pharm, BCPS",
+    signatoryTitle: "Director of Academic Affairs & Clinical Operations",
+    lastUpdated: "2026-11-03T09:00:00Z",
+    compliance: {
+      complianceStatus: 'Compliant & Verified',
+      conflictOfInterestDeclared: true,
+      efdaEthicalPromotionCertified: true,
+      contentNeutralityPledgeSigned: true,
+      neutralityAuditor: 'National Academic Review Panel',
+      auditDate: '2026-11-03',
+      transparencyAuditReportId: 'AUD-NGO-GOLD-2026-002'
+    }
+  },
+  {
+    id: "spon-let-007",
+    referenceNo: "REF: PS/DIR-SPON/2026/108",
+    date: "November 3, 2026",
+    recipientName: "Ato Daniel Assefa",
+    recipientTitle: "Secretary General",
+    organization: "Ethiopian Red Cross Society & Disaster Health Unit",
+    organizationCategory: "Philanthropic Foundation",
+    city: "Addis Ababa (Ras Desta Damtew)",
+    country: "Ethiopia",
+    recipientEmail: "erced@ethionet.et",
+    recipientPhone: "+251 11 551 9075",
+    sponsorTier: "Bronze Non-Government Sponsor",
+    contributionETB: 35000,
+    contributionUSD: 700,
+    focusArea: "Emergency Triage Medicine, Mass Casualty Clinical Protocols & Trauma Pharmacotherapy Capacity Building",
+    customNotes: "Underwriting 100 frontline first-responder ambulance staff and hospital emergency pharmacists with emergency pharmacology certifications.",
+    dispatchedAt: "2026-11-03T11:00:00Z",
+    status: "Under Review",
+    signatoryName: "Pharmacist Dawid Aliyi, B.Pharm, BCPS",
+    signatoryTitle: "Director of Academic Affairs & Clinical Operations",
+    lastUpdated: "2026-11-03T11:00:00Z",
+    compliance: {
+      complianceStatus: 'Compliant & Verified',
+      conflictOfInterestDeclared: true,
+      efdaEthicalPromotionCertified: true,
+      contentNeutralityPledgeSigned: true,
+      neutralityAuditor: 'MoH Emergency Medical Directorate',
+      auditDate: '2026-11-03',
+      transparencyAuditReportId: 'AUD-NGO-BRZ-2026-003'
+    }
   }
 ];

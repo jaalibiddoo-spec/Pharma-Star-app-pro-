@@ -271,8 +271,8 @@ export interface Guideline {
   authority: string;
   jurisdiction: 'National (Ethiopia)' | 'International';
   year: string;
-  status: 'Latest 2026' | 'Updated 2025' | 'Active Standard';
-  category: 'Infectious Disease' | 'Cardiology' | 'Endocrinology' | 'Nephrology' | 'Respiratory' | 'Formulary / STG';
+  status: 'Latest 2026' | 'Updated 2025' | 'Active Standard' | 'Directive No. 62/2026';
+  category: 'Infectious Disease' | 'Cardiology' | 'Endocrinology' | 'Nephrology' | 'Respiratory' | 'Formulary / STG' | 'Telehealth / Digital Pharmacy';
   summary: string;
   keyPoints: string[];
   sourceUrlName: string;
@@ -320,6 +320,7 @@ export interface CPDModule {
   description: string;
   competencyObjectives: string[];
   questions: CPDQuizQuestion[];
+  isEthics?: boolean;
 }
 
 export interface IssuedCPDCertificate {

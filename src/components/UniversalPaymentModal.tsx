@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, CheckCircle2, Smartphone, Landmark, ShieldCheck, Sparkles, 
   Copy, Check, AlertCircle, ArrowRight, CreditCard, Globe, 
@@ -9,6 +9,7 @@ import { PaymentServiceItem, PAYMENT_ACCOUNTS } from '../data/paymentServicesCon
 import { User, PaymentRecord, PaymentMethodType } from '../types';
 import { saveUserAndPayment } from '../utils/userStorage';
 import { validatePaymentReference } from '../utils/paymentValidator';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface UniversalPaymentModalProps {
   isOpen: boolean;
@@ -25,14 +26,24 @@ export const UniversalPaymentModal: React.FC<UniversalPaymentModalProps> = ({
   currentUser,
   onSuccess
 }) => {
-  const [selectedCurrency, setSelectedCurrency] = useState<'ETB' | 'USD'>('ETB');
-  const [paymentGateway, setPaymentGateway] = useState<'cbe' | 'telebirr' | 'cbeBirr' | 'chapa' | 'international'>('cbe');
+  const { currency: globalCurrency, isEthiopia, country } = useCurrency();
+  const [selectedCurrency, setSelectedCurrency] = useState<'ETB' | 'USD'>(globalCurrency);
+  const [paymentGateway, setPaymentGateway] = useState<'cbe' | 'telebirr' | 'cbeBirr' | 'chapa' | 'international'>(
+    isEthiopia ? 'cbe' : 'international'
+  );
   const [payerName, setPayerName] = useState(currentUser.fullName || '');
   const [payerPhone, setPayerPhone] = useState(currentUser.phone || '09');
   const [txRef, setTxRef] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQR, setShowQR] = useState(false);
+
+  useEffect(() => {
+    setSelectedCurrency(globalCurrency);
+    if (!isEthiopia) {
+      setPaymentGateway('international');
+    }
+  }, [globalCurrency, isEthiopia]);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // International Card Fields
