@@ -1,6 +1,7 @@
 import { Course } from '../types';
+import { getEnrichedModulesForCourse } from './chapterAdvancedConcepts';
 
-export const coursesData: Course[] = [
+const rawCoursesData: Course[] = [
   {
     id: "pharmacology",
     code: "PHARM-301",
@@ -841,3 +842,10 @@ export const coursesData: Course[] = [
     ]
   }
 ];
+
+// Enrich all 12 core disciplines with 4 compulsory chapters and 30 advanced concept pages per chapter
+export const coursesData: Course[] = rawCoursesData.map(course => ({
+  ...course,
+  modules: getEnrichedModulesForCourse(course.id, course.title)
+}));
+

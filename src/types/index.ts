@@ -62,6 +62,15 @@ export interface CourseQuizQuestion {
   clinicalPearl?: string;
 }
 
+export interface ChapterPage {
+  pageNumber: number;
+  title: string;
+  category: string;
+  content: string;
+  clinicalPearls?: string[];
+  keyFormulasOrGuidelines?: string[];
+}
+
 export interface CourseModule {
   id: string;
   title: string;
@@ -69,6 +78,8 @@ export interface CourseModule {
   content: string;
   clinicalPearls: string[];
   keyDrugsOrConcepts: string[];
+  chapterNumber?: number; // 1, 2, 3, 4
+  chapterPages?: ChapterPage[]; // 30 in-depth structured pages per chapter
   recommendedReadings?: string[];
   referenceTextbookChapters?: string[];
 }

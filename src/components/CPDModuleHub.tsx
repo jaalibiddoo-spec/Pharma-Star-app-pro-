@@ -8,16 +8,14 @@ import {
   Award, CheckCircle2, XCircle, ShieldCheck, Landmark, Smartphone, 
   CreditCard, Zap, Printer, Download, QrCode, FileText, ChevronRight, 
   RotateCcw, Sparkles, AlertCircle, Building2, Wallet, Globe, Check, Copy, X,
-  ChevronLeft, Eye
+  ChevronLeft, Eye, Lock
 } from 'lucide-react';
-import { useCurrency } from '../context/CurrencyContext';
 
 interface CPDModuleHubProps {
   onOpenConsultation?: () => void;
 }
 
 export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }) => {
-  const { isEthiopia, currency, formatPrice } = useCurrency();
   const [activeTab, setActiveTab] = useState<'modules' | 'wallet' | 'cycle_status'>('modules');
   const [selectedModule, setSelectedModule] = useState<CPDModule | null>(null);
   const [cpdCycleData, setCpdCycleData] = useState<any>(null);
@@ -36,15 +34,9 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [candidateName, setCandidateName] = useState('Pharmacist Dawid Aliyi');
   const [candidateLicense, setCandidateLicense] = useState('ETH-EFDA-PHARM-2026-8819');
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>(() => isEthiopia ? 'cbe' : 'card_international');
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('cbe');
   const [paymentRef, setPaymentRef] = useState('');
   const [isGeneratingCert, setIsGeneratingCert] = useState(false);
-
-  useEffect(() => {
-    if (!isEthiopia && selectedMethod !== 'card_international' && selectedMethod !== 'chapa') {
-      setSelectedMethod('card_international');
-    }
-  }, [isEthiopia]);
 
   // Certificate Viewer Modal
   const [viewingCertificate, setViewingCertificate] = useState<IssuedCPDCertificate | null>(null);
@@ -396,7 +388,7 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                         {module.ceuCredits} CEU Credits
                       </span>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
-                        {isEthiopia ? `${module.standardFeeETB} ETB` : `$${module.internationalFeeUSD || 4}.00 USD`}
+                        {module.standardFeeETB} ETB
                       </span>
                     </div>
                   </div>
@@ -846,25 +838,34 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                       />
                     </div>
 
-                    {/* Question Navigator Jump Grid (1 to 20) */}
+                    {/* Question Navigator Jump Grid (1 to 20) with Sequential Enforcement */}
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
                       {examQuestions.map((_, qIdx) => {
                         const isCurrent = qIdx === currentQuestionIndex;
                         const isAnswered = selectedAnswers[qIdx] !== undefined;
+                        // Strictly forbid accessing question if preceding question is unanswered
+                        const canAccess = qIdx <= currentQuestionIndex || (qIdx > 0 && selectedAnswers[qIdx - 1] !== undefined);
 
                         return (
                           <button
                             key={qIdx}
                             type="button"
-                            onClick={() => setCurrentQuestionIndex(qIdx)}
-                            className={`w-7 h-7 rounded-lg text-[11px] font-bold transition flex items-center justify-center cursor-pointer border ${
-                              isCurrent
-                                ? 'bg-teal-600 text-white border-teal-400 ring-2 ring-teal-400/30'
+                            disabled={!canAccess}
+                            onClick={() => {
+                              if (canAccess) {
+                                setCurrentQuestionIndex(qIdx);
+                              }
+                            }}
+                            className={`w-7 h-7 rounded-lg text-[11px] font-bold transition flex items-center justify-center border ${
+                              !canAccess
+                                ? 'bg-slate-950/60 text-slate-700 border-slate-900 cursor-not-allowed opacity-40'
+                                : isCurrent
+                                ? 'bg-teal-600 text-white border-teal-400 ring-2 ring-teal-400/30 cursor-pointer'
                                 : isAnswered
-                                ? 'bg-teal-950/60 text-teal-300 border-teal-500/50'
-                                : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-white'
+                                ? 'bg-teal-950/60 text-teal-300 border-teal-500/50 cursor-pointer'
+                                : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-white cursor-pointer'
                             }`}
-                            title={`Jump to Question ${qIdx + 1} ${isAnswered ? '(Answered)' : '(Unanswered)'}`}
+                            title={!canAccess ? `Locked: Answer Question ${qIdx} first` : `Question ${qIdx + 1} ${isAnswered ? '(Answered)' : '(Unanswered)'}`}
                           >
                             {qIdx + 1}
                           </button>
@@ -922,10 +923,17 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                           })}
                         </div>
 
-                        <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[11px] text-slate-400 flex items-center gap-1.5">
-                          <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-                          <span>Examination in progress. Correct answers & detailed rationales will be revealed upon final submission.</span>
-                        </div>
+                        {selectedAnswers[currentQuestionIndex] === undefined ? (
+                          <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300 flex items-center gap-2">
+                            <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span>Sequential Answering Enforced: You must select an answer for Question {currentQuestionIndex + 1} before Question {currentQuestionIndex + 2} will unlock.</span>
+                          </div>
+                        ) : (
+                          <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[11px] text-slate-400 flex items-center gap-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                            <span>Question answered. Correct answers &amp; detailed rationales will be revealed upon final submission.</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -946,8 +954,10 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                       {currentQuestionIndex < examQuestions.length - 1 ? (
                         <button
                           type="button"
+                          disabled={selectedAnswers[currentQuestionIndex] === undefined}
                           onClick={handleNextQuestion}
-                          className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer border border-slate-700"
+                          className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer border border-slate-700"
+                          title={selectedAnswers[currentQuestionIndex] === undefined ? "You must answer the current question before moving to the next question" : "Next Question"}
                         >
                           <span>Next Question</span>
                           <ChevronRight className="w-4 h-4" />
@@ -1013,7 +1023,7 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                           className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-xl transition cursor-pointer"
                         >
                           <Award className="w-4 h-4" />
-                          <span>Issue Official Certificate ({isEthiopia ? `${selectedModule.standardFeeETB} ETB` : `$${selectedModule.internationalFeeUSD || 4}.00 USD`})</span>
+                          <span>Issue Official Certificate ({selectedModule.standardFeeETB} ETB)</span>
                         </button>
                       )}
 
@@ -1156,7 +1166,7 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-300 text-[11px] uppercase tracking-wide">
-                    2. Select Payment Method (Fee: {isEthiopia ? `${selectedModule.standardFeeETB} ETB` : `$${selectedModule.internationalFeeUSD || 4}.00 USD`})
+                    2. Select Payment Method (Fee: {selectedModule.standardFeeETB} ETB / ${selectedModule.internationalFeeUSD} USD)
                   </span>
                   <span className="text-[10px] text-teal-400 font-bold bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
                     All Methods Allowed
@@ -1238,9 +1248,7 @@ export const CPDModuleHub: React.FC<CPDModuleHubProps> = ({ onOpenConsultation }
                       <span className="text-[11px] text-slate-400 block">Recipient / Beneficiary:</span>
                       <strong className="text-white text-xs">Pharmacist Dawid Aliyi</strong>
                     </div>
-                    <span className="text-amber-400 font-bold text-xs">
-                      {isEthiopia ? `${selectedModule.standardFeeETB} ETB` : `$${selectedModule.internationalFeeUSD || 4}.00 USD`}
-                    </span>
+                    <span className="text-amber-400 font-bold text-xs">{selectedModule.standardFeeETB} ETB</span>
                   </div>
 
                   <div className="flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800">

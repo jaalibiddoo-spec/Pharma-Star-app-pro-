@@ -60,6 +60,22 @@ export const CoursesModule: React.FC<CoursesModuleProps> = ({
   // Quiz state: stores selected answers per question id
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   
+  // 30-Page Chapter Concept Navigator State
+  const [currentChapterPageNum, setCurrentChapterPageNum] = useState<number>(1);
+
+  // Sequential Quiz Question Stepping State (strictly enforce answering question N before N+1)
+  const [activeQuizQuestionIndex, setActiveQuizQuestionIndex] = useState<number>(0);
+
+  // Reset chapter page number to 1 on chapter switch
+  useEffect(() => {
+    setCurrentChapterPageNum(1);
+  }, [selectedModuleId]);
+
+  // Reset active quiz question index to 0 on course switch
+  useEffect(() => {
+    setActiveQuizQuestionIndex(0);
+  }, [selectedCourseId]);
+  
   // Payment modal state
   const [paymentModalCourse, setPaymentModalCourse] = useState<Course | null>(null);
 
@@ -268,6 +284,23 @@ export const CoursesModule: React.FC<CoursesModuleProps> = ({
   const totalCompletedModulesCount = Object.values(courseProgress).reduce(
     (sum, record) => sum + (record.completedModuleIds?.length || 0), 0
   );
+
+  // Compulsory Chapter Progression & Exam Ban Logic (EFDA & MoH Standards)
+  const activeCourseCompletedCount = activeProgressRecord?.completedModuleIds?.length || 0;
+  const areAllChaptersCompleted = activeCourse.modules.length > 0 && 
+    activeCourse.modules.every(m => activeProgressRecord?.completedModuleIds?.includes(m.id));
+
+  // Sequential chapter lock: Chapter 1 is unlocked by default; Chapter N requires Chapter N-1 completed
+  const isChapterUnlocked = (chapterIndex: number): boolean => {
+    if (chapterIndex === 0) return true;
+    for (let i = 0; i < chapterIndex; i++) {
+      const prevMod = activeCourse.modules[i];
+      if (!prevMod || !activeProgressRecord?.completedModuleIds?.includes(prevMod.id)) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   return (
     <div className="space-y-6">
@@ -620,22 +653,41 @@ export const CoursesModule: React.FC<CoursesModuleProps> = ({
 
                   <button
                     onClick={() => {
+                      if (!areAllChaptersCompleted) {
+                        showToast(`EXAM TAKING STRICTLY BANNED: Incomplete prerequisite! Complete all 4 chapters first (${activeCourseCompletedCount}/4 done).`);
+                        setActiveCourseTab('quiz'); // Will render the full-screen official Ban Screen
+                        return;
+                      }
                       setActiveCourseTab('quiz');
                       updateProgressAndStoppedPoint(activeCourse.id, selectedModuleId, 'quiz');
                     }}
                     className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer ${
-                      activeCourseTab === 'quiz'
+                      !areAllChaptersCompleted
+                        ? 'bg-rose-950/40 text-rose-300 border border-rose-500/40 hover:bg-rose-950/60'
+                        : activeCourseTab === 'quiz'
                         ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow'
                         : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                     }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Practice Questions &amp; Gemini AI Tutor</span>
-                    {activeCourse.quizQuestions?.length ? (
-                      <span className="px-1.5 py-0.2 rounded bg-white/20 text-[10px]">
-                        {activeCourse.quizQuestions.length}
-                      </span>
-                    ) : null}
+                    {!areAllChaptersCompleted ? (
+                      <>
+                        <Lock className="w-3.5 h-3.5 text-rose-400" />
+                        <span>Exam Banned (Complete 4 Chapters First)</span>
+                        <span className="px-1.5 py-0.2 rounded bg-rose-500/30 text-[10px] font-mono text-rose-200">
+                          {activeCourseCompletedCount}/4
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Practice Questions &amp; Gemini AI Tutor</span>
+                        {activeCourse.quizQuestions?.length ? (
+                          <span className="px-1.5 py-0.2 rounded bg-white/20 text-[10px]">
+                            {activeCourse.quizQuestions.length}
+                          </span>
+                        ) : null}
+                      </>
+                    )}
                   </button>
 
                   <button
@@ -661,35 +713,61 @@ export const CoursesModule: React.FC<CoursesModuleProps> = ({
               {/* VIEW 1: Reading Material & Modules */}
               {activeCourseTab === 'reading' && (
                 <div className="space-y-4">
-                  {/* Module Selector Tabs with Completion Checkmarks */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-                    {activeCourse.modules.map(mod => {
+                  {/* 4 Compulsory Chapters Selector with Sequential Lock Enforcement */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pb-1 text-xs">
+                    {activeCourse.modules.map((mod, modIdx) => {
                       const isCompleted = activeProgressRecord?.completedModuleIds?.includes(mod.id);
+                      const isUnlocked = isChapterUnlocked(modIdx);
+                      const isSelected = selectedModuleId === mod.id;
+
                       return (
                         <button
                           key={mod.id}
+                          disabled={!isUnlocked}
                           onClick={() => {
+                            if (!isUnlocked) {
+                              showToast(`Chapter ${modIdx + 1} is locked! Complete Chapter ${modIdx} first.`);
+                              return;
+                            }
                             setSelectedModuleId(mod.id);
                             updateProgressAndStoppedPoint(activeCourse.id, mod.id, 'reading');
                           }}
-                          className={`px-3 py-2 rounded-xl font-bold whitespace-nowrap transition cursor-pointer text-left border flex items-center gap-2 ${
-                            selectedModuleId === mod.id
-                              ? 'bg-slate-800 border-teal-500 text-teal-300 shadow'
-                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                          className={`p-3.5 rounded-xl font-bold transition text-left border flex flex-col justify-between gap-2 ${
+                            !isUnlocked
+                              ? 'bg-slate-950/70 border-slate-900 text-slate-600 opacity-60 cursor-not-allowed'
+                              : isSelected
+                              ? 'bg-slate-800 border-teal-500 text-teal-300 shadow ring-1 ring-teal-500/40 cursor-pointer'
+                              : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700 cursor-pointer'
                           }`}
                         >
-                          {isCompleted ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                          ) : (
-                            <span className="w-2 h-2 rounded-full bg-slate-600 shrink-0" />
-                          )}
-                          <span>{mod.title}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-mono uppercase tracking-wider text-teal-400">
+                              Chapter {modIdx + 1} of 4
+                            </span>
+                            {isCompleted ? (
+                              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Done
+                              </span>
+                            ) : isUnlocked ? (
+                              <span className="flex items-center gap-1 text-[10px] text-amber-300 font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                In Progress
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-[10px] text-slate-500 font-semibold bg-slate-900 px-1.5 py-0.5 rounded">
+                                <Lock className="w-3 h-3" /> Locked
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold line-clamp-2 leading-snug">{mod.title}</span>
+                          <span className="text-[10px] text-slate-400 font-normal">
+                            {!isUnlocked ? `Prerequisite: Complete Chapter ${modIdx}` : `30 In-Depth Concept Pages`}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
 
-                  {/* Detailed Reading Material & High-Yield Pearls */}
+                  {/* Detailed Reading Material & 30-Page Advanced Concept Dossier */}
                   {activeModule && (
                     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -698,7 +776,7 @@ export const CoursesModule: React.FC<CoursesModuleProps> = ({
                             <h4 className="text-base font-bold text-white">{activeModule.title}</h4>
                             {isCurrentModuleCompleted && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                                <Check className="w-3 h-3" /> Completed
+                                <Check className="w-3 h-3" /> Chapter Completed
                               </span>
                             )}
                           </div>
@@ -715,14 +793,100 @@ export const CoursesModule: React.FC<CoursesModuleProps> = ({
                           }`}
                         >
                           <CheckSquare className="w-3.5 h-3.5" />
-                          <span>{isCurrentModuleCompleted ? 'Completed (Tap to Unmark)' : 'Mark Module as Completed'}</span>
+                          <span>{isCurrentModuleCompleted ? 'Completed (Tap to Unmark)' : 'Mark Chapter Completed'}</span>
                         </button>
                       </div>
 
-                      {/* Reading Material Body */}
-                      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs text-slate-200 leading-relaxed font-sans whitespace-pre-line space-y-2">
-                        {activeModule.content}
-                      </div>
+                      {/* 30-PAGE INTERACTIVE CONCEPT NAVIGATOR */}
+                      {activeModule.chapterPages && activeModule.chapterPages.length > 0 ? (
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-0.5 rounded bg-teal-500/20 text-teal-300 font-mono font-bold text-xs">
+                                PAGE {currentChapterPageNum} OF 30
+                              </span>
+                              <span className="text-xs text-slate-300 font-semibold">
+                                {activeModule.chapterPages[currentChapterPageNum - 1]?.category}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-amber-300 font-medium">
+                              Progress: {Math.round((currentChapterPageNum / 30) * 100)}% of 30 Pages
+                            </span>
+                          </div>
+
+                          {/* Horizontal Page Pills (1 to 30) */}
+                          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 pt-0.5 scrollbar-thin">
+                            {activeModule.chapterPages.map((pg) => {
+                              const isCurrentPg = pg.pageNumber === currentChapterPageNum;
+                              return (
+                                <button
+                                  key={pg.pageNumber}
+                                  onClick={() => setCurrentChapterPageNum(pg.pageNumber)}
+                                  className={`w-7 h-7 shrink-0 rounded-lg text-[10px] font-mono font-bold transition flex items-center justify-center cursor-pointer border ${
+                                    isCurrentPg
+                                      ? 'bg-teal-600 text-white border-teal-400 ring-2 ring-teal-400/30'
+                                      : pg.pageNumber < currentChapterPageNum
+                                      ? 'bg-teal-950/60 text-teal-300 border-teal-600/40'
+                                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                                  }`}
+                                  title={`Page ${pg.pageNumber}: ${pg.title}`}
+                                >
+                                  {pg.pageNumber}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Active Page Body */}
+                          <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-4 text-xs text-slate-200 leading-relaxed space-y-3">
+                            <h5 className="text-sm font-bold text-teal-300 border-b border-slate-800 pb-1.5">
+                              {activeModule.chapterPages[currentChapterPageNum - 1]?.title}
+                            </h5>
+                            <div className="whitespace-pre-line text-xs font-sans text-slate-300 leading-relaxed">
+                              {activeModule.chapterPages[currentChapterPageNum - 1]?.content}
+                            </div>
+                          </div>
+
+                          {/* Bottom Page Navigation Controls */}
+                          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+                            <button
+                              disabled={currentChapterPageNum === 1}
+                              onClick={() => setCurrentChapterPageNum(p => Math.max(1, p - 1))}
+                              className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                            >
+                              <ChevronLeft className="w-3.5 h-3.5" />
+                              <span>Previous Page</span>
+                            </button>
+
+                            {currentChapterPageNum < 30 ? (
+                              <button
+                                onClick={() => setCurrentChapterPageNum(p => Math.min(30, p + 1))}
+                                className="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow"
+                              >
+                                <span>Next Page ({currentChapterPageNum + 1}/30)</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  if (!isCurrentModuleCompleted) {
+                                    toggleModuleCompleted(activeCourse.id, activeModule.id);
+                                  }
+                                  showToast(`All 30 pages completed! Chapter unlocked.`);
+                                }}
+                                className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg transition cursor-pointer"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Complete 30 Pages &amp; Mark Chapter Completed</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs text-slate-200 leading-relaxed font-sans whitespace-pre-line space-y-2">
+                          {activeModule.content}
+                        </div>
+                      )}
 
                       {/* High Yield Clinical Pearls Box */}
                       <div className="bg-teal-950/20 border border-teal-500/30 p-4 rounded-xl space-y-2 text-xs">
@@ -783,106 +947,264 @@ export const CoursesModule: React.FC<CoursesModuleProps> = ({
                 </div>
               )}
 
-              {/* VIEW 2: Interactive Questions & Google Gemini AI Assist */}
+              {/* VIEW 2: Interactive Examination & Google Gemini AI Assist */}
               {activeCourseTab === 'quiz' && (
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-6 shadow-xl">
-                  <div className="border-b border-slate-800 pb-3">
-                    <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider block">
-                      Formative Assessment &amp; AI Tutoring
-                    </span>
-                    <h4 className="text-base font-bold text-white mt-0.5">
-                      Practice Questions for {activeCourse.title}
-                    </h4>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Select your answer to test your recall, then click <strong>&quot;Ask Google Gemini Assist&quot;</strong> to receive an in-depth mechanistic breakdown, distractor analysis, Ethiopian hospital clinical correlates, and high-yield memory mnemonics!
-                    </p>
-                  </div>
+                !areAllChaptersCompleted ? (
+                  /* EXAM BAN BARRIER: Strictly enforce 4 chapters completion before exam access */
+                  <div className="bg-slate-900 border-2 border-rose-500/50 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl text-center">
+                    <div className="w-16 h-16 rounded-full bg-rose-500/10 border-2 border-rose-500 flex items-center justify-center mx-auto text-rose-400 shadow-lg">
+                      <Lock className="w-8 h-8" />
+                    </div>
 
-                  {activeCourse.quizQuestions && activeCourse.quizQuestions.length > 0 ? (
-                    <div className="space-y-6">
-                      {activeCourse.quizQuestions.map((q, qIndex) => {
-                        const selectedIdx = quizAnswers[q.id] !== undefined ? quizAnswers[q.id] : null;
-                        const isAnswered = selectedIdx !== null;
-                        const isCorrect = selectedIdx === q.correctIndex;
+                    <div className="max-w-md mx-auto space-y-2">
+                      <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 inline-block">
+                        EXAMINATION BANNED — INCOMPLETE CHAPTERS
+                      </span>
+                      <h3 className="text-xl font-black text-white">
+                        Exam Access Strictly Banned
+                      </h3>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        In accordance with <strong>EFDA &amp; MoH Directive No. 49/2022</strong> accredited CPD regulations, sitting for the certification examination is strictly banned until you have completed all 4 mandatory chapters for <strong>{activeCourse.title}</strong>.
+                      </p>
+                    </div>
 
+                    {/* 4 Chapters Prerequisite Checklist */}
+                    <div className="max-w-md mx-auto bg-slate-950 border border-slate-800 rounded-xl p-4 text-left space-y-2.5">
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-400 border-b border-slate-800 pb-1.5">
+                        <span>Mandatory Chapters Checklist</span>
+                        <span className="text-amber-400 font-mono">{activeCourseCompletedCount} / {activeCourse.modules.length} Completed</span>
+                      </div>
+                      {activeCourse.modules.map((m, idx) => {
+                        const done = activeProgressRecord?.completedModuleIds?.includes(m.id);
                         return (
-                          <div key={q.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-start gap-2">
-                                <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 font-bold text-xs">
-                                  Q{qIndex + 1}
-                                </span>
-                                <h5 className="text-xs md:text-sm font-semibold text-white leading-snug">
-                                  {q.question}
-                                </h5>
-                              </div>
+                          <div key={m.id} className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-900 border border-slate-800/80">
+                            <div className="flex items-center gap-2">
+                              {done ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                              ) : (
+                                <Lock className="w-4 h-4 text-rose-400 shrink-0" />
+                              )}
+                              <span className={done ? "text-slate-200 font-semibold" : "text-slate-400"}>
+                                Chapter {idx + 1}: {m.title.slice(0, 36)}...
+                              </span>
                             </div>
-
-                            {/* Option Radio / Button List */}
-                            <div className="space-y-1.5 pt-1">
-                              {q.options.map((opt, optIndex) => {
-                                const isThisSelected = selectedIdx === optIndex;
-                                const isThisCorrect = optIndex === q.correctIndex;
-
-                                let btnStyle = 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700';
-                                if (isAnswered) {
-                                  if (isThisCorrect) {
-                                    btnStyle = 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200 font-semibold';
-                                  } else if (isThisSelected && !isCorrect) {
-                                    btnStyle = 'bg-rose-500/20 border-rose-500/60 text-rose-200';
-                                  } else {
-                                    btnStyle = 'bg-slate-900/50 border-slate-800 text-slate-500';
-                                  }
-                                }
-
-                                return (
-                                  <button
-                                    key={optIndex}
-                                    onClick={() => {
-                                      setQuizAnswers(prev => ({ ...prev, [q.id]: optIndex }));
-                                      updateProgressAndStoppedPoint(activeCourse.id, selectedModuleId, 'quiz');
-                                    }}
-                                    className={`w-full text-left p-3 rounded-xl border text-xs transition flex items-center justify-between cursor-pointer ${btnStyle}`}
-                                  >
-                                    <div className="flex items-center gap-2.5">
-                                      <span className="w-5 h-5 rounded-full border border-slate-700 flex items-center justify-center text-[10px] font-mono text-slate-400">
-                                        {String.fromCharCode(65 + optIndex)}
-                                      </span>
-                                      <span>{opt}</span>
-                                    </div>
-                                    {isAnswered && isThisCorrect && (
-                                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                                    )}
-                                  </button>
-                                );
-                              })}
-                            </div>
-
-                            {/* Explanation and Gemini Assistant */}
-                            {isAnswered && (
-                              <div className="mt-3 pt-3 border-t border-slate-800 space-y-3">
-                                <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs space-y-1">
-                                  <span className="font-bold text-teal-400 block">Correct Answer Explanation:</span>
-                                  <p className="text-slate-300 leading-relaxed">{q.explanation}</p>
-                                </div>
-
-                                <GeminiQuestionAssistant 
-                                  courseTitle={activeCourse.title}
-                                  question={q}
-                                  selectedOptionIndex={selectedIdx}
-                                />
-                              </div>
-                            )}
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${done ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                              {done ? 'Completed' : 'Locked'}
+                            </span>
                           </div>
                         );
                       })}
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-slate-400 text-xs">
-                      No quiz questions loaded for this module.
-                    </div>
-                  )}
-                </div>
+
+                    <button
+                      onClick={() => setActiveCourseTab('reading')}
+                      className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs inline-flex items-center gap-2 shadow-lg transition cursor-pointer"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      <span>Return to Complete Chapter Readings</span>
+                    </button>
+                  </div>
+                ) : (
+                  /* SEQUENTIAL EXAM ENGINE: Strictly ban answering question N+1 before question N */
+                  (() => {
+                    const quizQuestions = activeCourse.quizQuestions || [];
+                    if (quizQuestions.length === 0) {
+                      return (
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
+                          <p className="text-sm text-slate-400">
+                            No accredited examination questions currently published for {activeCourse.title}.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    const currentQ = quizQuestions[activeQuizQuestionIndex] || quizQuestions[0];
+                    const selectedIdx = quizAnswers[currentQ.id] !== undefined ? quizAnswers[currentQ.id] : null;
+                    const isAnswered = selectedIdx !== null;
+                    const isCorrect = selectedIdx === currentQ.correctIndex;
+
+                    return (
+                      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-6 shadow-xl">
+                        <div className="border-b border-slate-800 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider block">
+                              Accredited Examination &bull; Sequential Answering Mode Enforced
+                            </span>
+                            <h4 className="text-base font-bold text-white mt-0.5">
+                              {activeCourse.title} Examination
+                            </h4>
+                          </div>
+                          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-teal-500/15 text-teal-300 border border-teal-500/30">
+                            Question {activeQuizQuestionIndex + 1} of {quizQuestions.length}
+                          </span>
+                        </div>
+
+                        {/* Sequential Question Navigator Bar (Cannot jump ahead to unanswered questions) */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[11px] text-slate-400">
+                            <span>Sequential Examination Progress</span>
+                            <span className="font-mono text-teal-400">
+                              {Math.round(((activeQuizQuestionIndex + 1) / quizQuestions.length) * 100)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-teal-500 to-emerald-400 h-full transition-all duration-300"
+                              style={{ width: `${((activeQuizQuestionIndex + 1) / quizQuestions.length) * 100}%` }}
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-1.5 overflow-x-auto pt-1 pb-1">
+                            {quizQuestions.map((q, qIdx) => {
+                              const isCurrent = qIdx === activeQuizQuestionIndex;
+                              const isQAnswered = quizAnswers[q.id] !== undefined;
+                              // Strictly allow jumping only if current question or all preceding questions are answered
+                              const canAccess = qIdx === 0 || quizAnswers[quizQuestions[qIdx - 1]?.id] !== undefined;
+
+                              return (
+                                <button
+                                  key={q.id}
+                                  disabled={!canAccess}
+                                  onClick={() => {
+                                    if (!canAccess) {
+                                      showToast(`Access Restricted: Answer Question ${qIdx} before proceeding to Question ${qIdx + 1}.`);
+                                      return;
+                                    }
+                                    setActiveQuizQuestionIndex(qIdx);
+                                  }}
+                                  className={`w-7 h-7 rounded-lg text-[10px] font-mono font-bold transition flex items-center justify-center border ${
+                                    !canAccess
+                                      ? 'bg-slate-950/60 text-slate-600 border-slate-900 cursor-not-allowed'
+                                      : isCurrent
+                                      ? 'bg-teal-600 text-white border-teal-400 ring-2 ring-teal-400/30 cursor-pointer'
+                                      : isQAnswered
+                                      ? 'bg-teal-950/70 text-teal-300 border-teal-500/50 cursor-pointer'
+                                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white cursor-pointer'
+                                  }`}
+                                  title={!canAccess ? `Locked: Answer previous question first` : `Question ${qIdx + 1}`}
+                                >
+                                  {qIdx + 1}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Active Question Display */}
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
+                          <div className="flex items-start gap-2.5">
+                            <span className="px-2.5 py-0.5 rounded bg-teal-500/20 text-teal-300 font-mono font-bold text-xs shrink-0 mt-0.5">
+                              Q{activeQuizQuestionIndex + 1}
+                            </span>
+                            <h5 className="text-sm font-semibold text-white leading-relaxed">
+                              {currentQ.question}
+                            </h5>
+                          </div>
+
+                          {/* Options List */}
+                          <div className="space-y-2 pt-1">
+                            {currentQ.options.map((opt, optIndex) => {
+                              const isThisSelected = selectedIdx === optIndex;
+                              const isThisCorrect = optIndex === currentQ.correctIndex;
+
+                              let btnStyle = 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700';
+                              if (isAnswered) {
+                                if (isThisCorrect) {
+                                  btnStyle = 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200 font-semibold';
+                                } else if (isThisSelected && !isCorrect) {
+                                  btnStyle = 'bg-rose-500/20 border-rose-500/60 text-rose-200';
+                                } else {
+                                  btnStyle = 'bg-slate-900/50 border-slate-800 text-slate-500';
+                                }
+                              }
+
+                              return (
+                                <button
+                                  key={optIndex}
+                                  onClick={() => {
+                                    setQuizAnswers(prev => ({ ...prev, [currentQ.id]: optIndex }));
+                                    updateProgressAndStoppedPoint(activeCourse.id, selectedModuleId, 'quiz');
+                                  }}
+                                  className={`w-full text-left p-3.5 rounded-xl border text-xs transition flex items-center justify-between cursor-pointer ${btnStyle}`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="w-5 h-5 rounded-full border border-slate-700 flex items-center justify-center text-[10px] font-mono text-slate-400">
+                                      {String.fromCharCode(65 + optIndex)}
+                                    </span>
+                                    <span>{opt}</span>
+                                  </div>
+                                  {isAnswered && isThisCorrect && (
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Preceding Question Requirement Warning */}
+                          {!isAnswered && (
+                            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300 flex items-center gap-2">
+                              <Lock className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                              <span>Compulsory: You must select an answer for Question {activeQuizQuestionIndex + 1} before proceeding to the next question.</span>
+                            </div>
+                          )}
+
+                          {/* Explanation and AI Assistant */}
+                          {isAnswered && (
+                            <div className="mt-4 pt-3 border-t border-slate-800 space-y-3">
+                              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs space-y-1">
+                                <span className="font-bold text-teal-400 block">Correct Answer Rationale:</span>
+                                <p className="text-slate-300 leading-relaxed">{currentQ.explanation}</p>
+                              </div>
+
+                              <GeminiQuestionAssistant 
+                                courseTitle={activeCourse.title}
+                                question={currentQ}
+                                selectedOptionIndex={selectedIdx}
+                              />
+                            </div>
+                          )}
+
+                          {/* Bottom Stepping Controls (Strict Next Prevention) */}
+                          <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+                            <button
+                              disabled={activeQuizQuestionIndex === 0}
+                              onClick={() => setActiveQuizQuestionIndex(idx => Math.max(0, idx - 1))}
+                              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                              <span>Previous Question</span>
+                            </button>
+
+                            {activeQuizQuestionIndex < quizQuestions.length - 1 ? (
+                              <button
+                                disabled={!isAnswered}
+                                onClick={() => {
+                                  if (!isAnswered) {
+                                    showToast(`Answer Question ${activeQuizQuestionIndex + 1} first!`);
+                                    return;
+                                  }
+                                  setActiveQuizQuestionIndex(idx => idx + 1);
+                                }}
+                                className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow"
+                                title={!isAnswered ? "Answer current question before unlocking next question" : "Next Question"}
+                              >
+                                <span>Next Question ({activeQuizQuestionIndex + 2}/{quizQuestions.length})</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <div className="text-right">
+                                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                                  <CheckCircle2 className="w-4 h-4" /> All Questions Completed!
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()
+                )
               )}
 
               {/* VIEW 3: Recognized Textbooks & Readings */}
