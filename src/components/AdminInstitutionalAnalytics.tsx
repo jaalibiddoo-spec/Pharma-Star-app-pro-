@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { User } from '../types';
 import { getRememberedAccounts } from '../utils/userStorage';
-import { AdminSponsorLettersModal } from './AdminSponsorLettersModal';
 
 interface UserRecord {
   id: string;
@@ -36,7 +35,6 @@ export const AdminInstitutionalAnalytics: React.FC<{ currentUser: User }> = ({ c
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortField, setSortField] = useState<'name' | 'paid' | 'date'>('date');
   const [lastAutoUpdated, setLastAutoUpdated] = useState<string>(new Date().toLocaleTimeString());
-  const [isSponsorLettersOpen, setIsSponsorLettersOpen] = useState(false);
 
   // Base institutional user population across Ethiopian & Regional ecosystems
   const [usersList, setUsersList] = useState<UserRecord[]>([
@@ -520,14 +518,6 @@ export const AdminInstitutionalAnalytics: React.FC<{ currentUser: User }> = ({ c
             </button>
 
             <button
-              onClick={() => setIsSponsorLettersOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow"
-            >
-              <Building2 className="w-3.5 h-3.5 text-amber-400" />
-              <span>Sponsor Invitations &amp; Letters History</span>
-            </button>
-
-            <button
               onClick={handleExportCSV}
               className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
@@ -844,12 +834,6 @@ export const AdminInstitutionalAnalytics: React.FC<{ currentUser: User }> = ({ c
           </table>
         </div>
       </div>
-
-      {/* Formal Sponsor Invitation & Letters History Modal */}
-      <AdminSponsorLettersModal
-        isOpen={isSponsorLettersOpen}
-        onClose={() => setIsSponsorLettersOpen(false)}
-      />
     </div>
   );
 };

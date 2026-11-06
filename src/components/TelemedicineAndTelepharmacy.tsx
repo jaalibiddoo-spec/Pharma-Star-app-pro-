@@ -5,7 +5,7 @@ import {
   CreditCard, Landmark, DollarSign, Sparkles, AlertCircle, 
   CheckCircle2, Pill, Stethoscope, Send, ChevronRight, 
   Sliders, ArrowRight, Printer, Share2, Copy, Check, 
-  Calendar, Phone, Radio, HeartPulse, Activity, Award
+  Calendar, Phone, Radio, HeartPulse, Activity
 } from 'lucide-react';
 import { User as AppUser, PaymentRecord } from '../types';
 import { saveUserAndPayment } from '../utils/userStorage';
@@ -44,18 +44,7 @@ export const TelemedicineAndTelepharmacy: React.FC<TelemedicineProps> = ({
   currentUser,
   onUpdateUser
 }) => {
-  const [activeTab, setActiveTab] = useState<'live_room' | 'telepharmacy_mtm' | 'queue_schedule' | 'negotiate_payment' | 'guidelines_compliance'>('live_room');
-
-  // Interactive Telehealth Compliance Checklist State (MoH Directive & EFDA Guidelines)
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({
-    provider_licensed: true,
-    patient_consent_verified: true,
-    encrypted_p2p_channel: true,
-    erx_authentication_active: true,
-    scheduled_substances_restricted: true,
-    records_archival_5yr: true
-  });
-  const [complianceCertIssued, setComplianceCertIssued] = useState(false);
+  const [activeTab, setActiveTab] = useState<'live_room' | 'telepharmacy_mtm' | 'queue_schedule' | 'negotiate_payment'>('live_room');
 
   // Live Video Room State
   const [isVideoActive, setIsVideoActive] = useState(true);
@@ -315,19 +304,7 @@ export const TelemedicineAndTelepharmacy: React.FC<TelemedicineProps> = ({
           }`}
         >
           <CreditCard className="w-3.5 h-3.5 text-amber-300" />
-          <span>Negotiable Fee &amp; Chapa Settlement</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('guidelines_compliance')}
-          className={`px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 cursor-pointer ${
-            activeTab === 'guidelines_compliance'
-              ? 'bg-teal-600 text-white shadow'
-              : 'bg-slate-900 text-slate-400 hover:text-white'
-          }`}
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-          <span>MoH &amp; EFDA Guidelines &amp; Directives</span>
+          <span>Negotiable Fee & Chapa Settlement</span>
         </button>
       </div>
 
@@ -816,231 +793,6 @@ export const TelemedicineAndTelepharmacy: React.FC<TelemedicineProps> = ({
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* VIEW 5: Ethiopian MoH & EFDA Telemedicine & Telepharmacy Guidelines & Compliance */}
-      {activeTab === 'guidelines_compliance' && (
-        <div className="space-y-6">
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-indigo-950 border border-teal-500/30 rounded-2xl p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center gap-1.5 w-fit">
-                  <ShieldCheck className="w-4 h-4 text-teal-400" />
-                  <span>Federal Regulatory Framework 2026</span>
-                </span>
-                <h3 className="text-xl md:text-2xl font-black text-white mt-2">
-                  Ethiopian MoH &amp; EFDA Telemedicine and Telepharmacy Directives
-                </h3>
-                <p className="text-xs md:text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
-                  Standardized protocols governing remote clinical consultations, electronic prescribing (e-Rx), Medication Therapy Management (MTM), patient data privacy, and last-mile distribution across public and private healthcare facilities.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-teal-300 flex items-center gap-1">
-                  <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Directive No. 62/2026 Standard</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Guidelines Grid: 2 Core Directives */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* MoH Telemedicine Directive */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-              <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold">
-                  <Stethoscope className="w-5 h-5 text-teal-400" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-white text-sm">
-                    Ministry of Health (MoH) Telemedicine Directive
-                  </h4>
-                  <span className="text-[11px] text-teal-400">Clinical Practice &amp; Provider Standards</span>
-                </div>
-              </div>
-
-              <div className="space-y-3 text-xs text-slate-300">
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <strong className="text-white block flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    1. Mandatory Practitioner Licensure
-                  </strong>
-                  <p className="text-slate-400 text-[11px]">
-                    All practitioners conducting teleconsultations must hold active, verifiable licenses registered with the Ethiopian Food and Drug Authority (EFDA) or MoH Professional Licensing Directorate.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <strong className="text-white block flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    2. Explicit Patient Informed Consent
-                  </strong>
-                  <p className="text-slate-400 text-[11px]">
-                    Before initiating video or audio sessions, providers must verify patient identity (MRN, Kebele ID) and obtain recorded verbal or digital consent covering telehealth limitations.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <strong className="text-white block flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    3. Emergency Referral Escalation Protocol
-                  </strong>
-                  <p className="text-slate-400 text-[11px]">
-                    Any acute deterioration (chest pain, SpO2 &lt; 90%, SBP &gt; 180 mmHg) triggers immediate transfer to the nearest tertiary hospital (Tikur Anbessa, Jimma, Gondar, Hawassa) with formal SBAR dispatch notes.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <strong className="text-white block flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    4. 5-Year Medical Records Archival
-                  </strong>
-                  <p className="text-slate-400 text-[11px]">
-                    Encrypted session logs, SOAP clinical progress notes, and diagnostic attachments must be retained for at least 5 years conforming to Ethiopian national health privacy laws.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* EFDA Telepharmacy & E-Prescription Directive */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-              <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
-                  <Pill className="w-5 h-5 text-amber-400" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-white text-sm">
-                    EFDA Telepharmacy &amp; E-Prescription Standards
-                  </h4>
-                  <span className="text-[11px] text-amber-400">Pharmaceutical Dispensing &amp; MTM Protocols</span>
-                </div>
-              </div>
-
-              <div className="space-y-3 text-xs text-slate-300">
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <strong className="text-white block flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    1. Electronic Prescription (e-Rx) Authentication
-                  </strong>
-                  <p className="text-slate-400 text-[11px]">
-                    Prescriptions received electronically must contain verified prescriber license ID, institutional stamp, and multi-factor authorization before pharmaceutical dispensing.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <strong className="text-white block flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    2. Scheduled Substances Prohibition
-                  </strong>
-                  <p className="text-slate-400 text-[11px]">
-                    Dispensing Schedule II &amp; III Narcotic and Psychotropic substances via telepharmacy is strictly prohibited by EFDA without physical in-person tri-colored narcotic vouchers.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <strong className="text-white block flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    3. Mandatory Pharmacist Patient Counseling
-                  </strong>
-                  <p className="text-slate-400 text-[11px]">
-                    Every telepharmacy order requires synchronous video or audio counseling by a licensed Pharmacist (B.Pharm / BCPS) covering dose, timing, adverse effects, and storage conditions.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <strong className="text-white block flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    4. Cold-Chain &amp; Tamper-Evident Last Mile
-                  </strong>
-                  <p className="text-slate-400 text-[11px]">
-                    Thermolabile pharmaceuticals (insulins, vaccines, biologics) must be distributed in calibrated 2°C–8°C insulated carriers with electronic temperature dataloggers.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive Facility Compliance & Readiness Auditor */}
-          <div className="bg-slate-900 border border-teal-500/30 rounded-2xl p-6 space-y-5 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400 bg-teal-500/10 px-2.5 py-0.5 rounded border border-teal-500/20">
-                  MoH Self-Audit Tool
-                </span>
-                <h4 className="text-base font-bold text-white mt-1">
-                  Facility Telehealth &amp; Telepharmacy Readiness Checklist
-                </h4>
-                <p className="text-xs text-slate-400">
-                  Audit your clinical health center or hospital ward against the 6 statutory EFDA / MoH directives.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-slate-950 border border-teal-500/40 text-teal-300">
-                  Score: {Object.values(checklist).filter(Boolean).length} / 6 Criteria Met
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-              {[
-                { key: 'provider_licensed', label: '1. All participating teleconsultation providers hold verified EFDA/MoH practicing licenses.' },
-                { key: 'patient_consent_verified', label: '2. Informed verbal/digital consent is recorded and logged prior to every remote encounter.' },
-                { key: 'encrypted_p2p_channel', label: '3. Video/audio streams utilize encrypted WebRTC P2P transmission with zero unauthorized intercept.' },
-                { key: 'erx_authentication_active', label: '4. Electronic prescriptions undergo drug interaction (DTP) & renal dosing checks before release.' },
-                { key: 'scheduled_substances_restricted', label: '5. Narcotics and controlled psychotropics are restricted from remote automated dispatch.' },
-                { key: 'records_archival_5yr', label: '6. Electronic health records and consultation audio transcripts are archived for minimum 5 years.' }
-              ].map(item => (
-                <label 
-                  key={item.key}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 cursor-pointer transition select-none"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checklist[item.key]}
-                    onChange={(e) => setChecklist(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                    className="mt-0.5 w-4 h-4 rounded text-teal-500 focus:ring-teal-400 bg-slate-900 border-slate-700"
-                  />
-                  <span className="text-slate-300 text-[11px] leading-relaxed">{item.label}</span>
-                </label>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-800">
-              <span className="text-xs text-slate-400">
-                Audited Facility: <strong>{currentUser.organization || 'Tikur Anbessa Specialized Hospital / Rural Post'}</strong>
-              </span>
-
-              <button
-                onClick={() => setComplianceCertIssued(true)}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs shadow-lg flex items-center gap-2 cursor-pointer transition"
-              >
-                <Award className="w-4 h-4" />
-                <span>Verify &amp; Generate Telehealth Compliance Certificate</span>
-              </button>
-            </div>
-
-            {complianceCertIssued && (
-              <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/50 text-emerald-200 text-xs space-y-2 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-white flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Telehealth &amp; Telepharmacy Compliance Verified • Certificate ID: ETH-MOH-TELE-2026-992</span>
-                  </span>
-                  <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300 font-bold">
-                    APPROVED BY PHARM. DAWID ALIYI
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300">
-                  Your facility has satisfied 100% of the Ethiopian MoH Directive 62/2026 and EFDA Telepharmacy standards. Authorized for clinical telehealth and remote pharmaceutical care operations.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -56,10 +56,6 @@ import { UniversalPaymentModal } from './components/UniversalPaymentModal';
 import { PHARMASTAR_SERVICES, PaymentServiceItem } from './data/paymentServicesConfig';
 import { getStoredUser, saveUserAndPayment } from './utils/userStorage';
 import { PaymentRecord } from './types';
-import { useCurrency } from './context/CurrencyContext';
-import { CountryCurrencySelector } from './components/CountryCurrencySelector';
-import { GlobalPharmacySearch } from './components/GlobalPharmacySearch';
-import { InternationalPharmacySuite } from './components/InternationalPharmacySuite';
 
 import { 
   Sparkles, BookOpen, Video, ShieldCheck, Stethoscope, 
@@ -69,16 +65,14 @@ import {
   Award, Building2, BookMarked, ExternalLink, Layout, Package,
   FileCheck2, Scan, Headphones, Truck, Presentation, Tv, Flame,
   Radio, HelpCircle, Calculator, Store, Receipt, GitBranch, Github,
-  Share2, GraduationCap, BarChart3, AlertTriangle, FileScan, Scale,
-  Search
+  Share2, GraduationCap, BarChart3, AlertTriangle, FileScan, Scale
 } from 'lucide-react';
 
 export default function App() {
-  const { isEthiopia, currency, formatPrice } = useCurrency();
   const [viewMode, setViewMode] = useState<'website' | 'app'>('website');
   const [currentLang, setCurrentLang] = useState<Language>('en');
   const [activeTab, setActiveTab] = useState<
-    'international_suite' | 'global_search' | 'courses' | 'pharmacy_library' | 'medical_advancements' | 'prescription_review' | 'research_publishing' | 'store_monitor' | 'cpd_modules' | 'wiki' | 
+    'courses' | 'pharmacy_library' | 'medical_advancements' | 'prescription_review' | 'research_publishing' | 'store_monitor' | 'cpd_modules' | 'wiki' | 
     'moa3d' | 'drug_checker' | 'lab_interpreter' | 
     'patient_history' | 'med_tracker' | 'live_chat' | 'guidelines' |
     'sponsorships' | 'anti_counterfeit' | 'audio_pearls' | 'epss_logistics' |
@@ -211,8 +205,6 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'global_search', label: 'Global Pharmacy Search (FDA/EMA Alerts & Live News)', icon: Search },
-    { id: 'international_suite', label: 'International Practice (PGx/TDM/AWaRe/USP)', icon: Globe },
     { id: 'courses', label: t.courses, icon: BookOpen },
     { id: 'pharmacy_library', label: 'Pharmacy Library & Readable Bookshelf', icon: BookMarked },
     { id: 'medical_advancements', label: 'Universal Drug Compendium & Advancements (DIS)', icon: Pill },
@@ -294,15 +286,7 @@ export default function App() {
           {/* CBE & Registration Fee info */}
           <div className="flex items-center gap-3">
             <span className="text-slate-400 hidden md:inline">
-              {isEthiopia ? (
-                <>
-                  Registration: <strong className="text-teal-300">1,000 Birr</strong> (CBE: <strong className="text-white font-mono">1000262900367</strong> Dawid Aliyi) or <strong className="text-teal-300">Telebirr (0982852778)</strong>
-                </>
-              ) : (
-                <>
-                  Global Registration: <strong className="text-teal-300">$10.00 USD</strong> (Visa, Mastercard, PayPal) or <strong className="text-teal-300">1,000 ETB</strong>
-                </>
-              )}
+              Registration: <strong className="text-teal-300">1,000 Birr</strong> (CBE: <strong className="text-white font-mono">1000262900367</strong> Dawid Aliyi) or <strong className="text-teal-300">$10 USD (Chapa)</strong>
             </span>
 
             <button
@@ -395,39 +379,6 @@ export default function App() {
 
           {/* Right Controls: Switch to Website, Install App, Offline Sync, Language, User Profile */}
           <div className="flex items-center gap-2">
-            {/* Global Pharmacy Search Launcher (FDA/EMA Alerts & Live News) */}
-            <button
-              onClick={() => setActiveTab('global_search')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow cursor-pointer ${
-                activeTab === 'global_search'
-                  ? 'bg-gradient-to-r from-teal-500 to-emerald-400 text-slate-950 font-black border-teal-300 shadow-teal-500/30'
-                  : 'bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border-teal-500/40'
-              }`}
-              title="Real-time FDA/EMA Drug Warnings & Global News (Google Search Grounded)"
-            >
-              <Search className={`w-3.5 h-3.5 ${activeTab === 'global_search' ? 'text-slate-950' : 'text-teal-400'}`} />
-              <span className="hidden sm:inline">Global Search</span>
-              <span className="sm:hidden">Search</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-teal-400/20 text-teal-200 border border-teal-400/30 hidden lg:inline">
-                LIVE
-              </span>
-            </button>
-
-            {/* International Practice Suite (PGx, TDM, AWaRe, USP) */}
-            <button
-              onClick={() => setActiveTab('international_suite')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow cursor-pointer ${
-                activeTab === 'international_suite'
-                  ? 'bg-gradient-to-r from-indigo-500 to-teal-400 text-slate-950 font-black border-teal-300 shadow-teal-500/30'
-                  : 'bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border-indigo-500/40'
-              }`}
-              title="International Practice: CPIC Pharmacogenomics, TDM, WHO AWaRe, USP Compounding"
-            >
-              <Globe className={`w-3.5 h-3.5 ${activeTab === 'international_suite' ? 'text-slate-950' : 'text-indigo-400'}`} />
-              <span className="hidden sm:inline">International Practice</span>
-              <span className="sm:hidden">Int'l</span>
-            </button>
-
             {/* Universal Payment & Unlock Services */}
             <button
               onClick={() => handleOpenUniversalPayment()}
@@ -486,9 +437,6 @@ export default function App() {
                 </>
               )}
             </button>
-
-            {/* Country & Currency Switcher */}
-            <CountryCurrencySelector />
 
             {/* Language Dropdown */}
             <div className="relative flex items-center">
@@ -554,11 +502,7 @@ export default function App() {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-800 bg-slate-900 p-4 space-y-2">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <span className="text-xs text-slate-400 font-medium">Country & Currency</span>
-              <CountryCurrencySelector />
-            </div>
+          <div className="md:hidden border-t border-slate-800 bg-slate-900 p-4 space-y-1">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -605,19 +549,6 @@ export default function App() {
               Disable Simulation
             </button>
           </div>
-        )}
-
-        {/* Tab: World-Class International Clinical Pharmacy & Pharmacogenomics Suite */}
-        {activeTab === 'international_suite' && (
-          <InternationalPharmacySuite />
-        )}
-
-        {/* Tab 0: Real-time Global Pharmacy Search with Google Search Grounding */}
-        {activeTab === 'global_search' && (
-          <GlobalPharmacySearch
-            onNavigateToCourse={() => setActiveTab('courses')}
-            onNavigateToGuidelines={() => setActiveTab('guidelines')}
-          />
         )}
 
         {/* Tab 1: Academic & Professional Courses */}

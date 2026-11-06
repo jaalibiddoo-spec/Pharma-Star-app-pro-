@@ -33,8 +33,6 @@ import { initialSponsorLetters } from './src/data/sponsorLettersData.ts';
 import { SponsorInvitationLetter } from './src/types/sponsorLetter.ts';
 import { BarcodeScanResult, PaymentWebhookEvent } from './src/types/index.ts';
 import cpdRouter from './cpdRoutes.ts';
-import { verifyGlobalCompliance } from './controllers/cpdController.ts';
-import { getOfflineGlobalPharmacyNews } from './src/data/globalPharmacyNewsData.ts';
 
 dotenv.config();
 
@@ -145,105 +143,6 @@ Understanding the underlying pathophysiology and drug-target interactions enable
   }
 });
 
-// Real-time Global Pharmacy Search with Google Search Grounding (FDA/EMA Alerts & World News)
-app.post('/api/gemini/global-pharmacy-search', async (req, res) => {
-  try {
-    const { query, category, agency } = req.body;
-    if (!query) {
-      return res.status(400).json({ error: 'Search query is required' });
-    }
-
-    if (ai) {
-      const prompt = `You are a Senior Regulatory Affairs Specialist & Global Pharmacovigilance Director at Pharma Star App Pro, working with Pharmacist Dawid Aliyi.
-Search Query: "${query}"
-Category: "${category || 'All Safety & Regulatory Updates'}"
-Regulatory Focus: "${agency || 'Global (US FDA, EMA, WHO, MHRA, EFDA)'}"
-
-Using real-time web search information, generate an authoritative, highly structured regulatory & clinical intelligence update:
-
-### 🚨 1. Regulatory Alert & Breaking News Summary
-- Provide exact drug name(s), active ingredient(s), therapeutic class, brand names, and manufacturers.
-- Identify the issuing regulatory authority (e.g. US FDA MedWatch, EMA PRAC/CHMP, WHO Medical Product Alerts, UK MHRA, or EFDA).
-- State the exact date, notice type (Black Box Warning, Recall, Safety Alert, Shortage, or Approval), and official headline.
-
-### ⚠️ 2. Mechanism of Clinical Risk & Patient Harm
-- Explain the biological, toxicological, pharmacodynamic, or pharmaceutical mechanism causing the concern (e.g. QT prolongation, hepatotoxicity, nitrosamine carcinogens, compounding contamination, severe hypoglycemia).
-- Detail high-risk patient subgroups (pediatrics, elderly, pregnant/lactating, renal/hepatic impairment).
-
-### 📋 3. Pharmacist Action Plan & Facility Directives
-- **Inventory & Supply Chain**: Specific instructions for quarantine, lot number recall, return-to-distributor, or cold chain inspection.
-- **Clinical Triage & Prescriber Engagement**: Recommended alternative therapeutic agents and dosage adjustments.
-- **Patient Counseling & Communication**: Key points for counseling patients currently on this medication (warning signs, whether to discontinue immediately, emergency indicators).
-
-### 🌐 4. Cross-Jurisdiction Regulatory Comparison
-- How do the US FDA, European Medicines Agency (EMA), WHO, and national authorities compare on this topic?
-
-### 🔬 5. Key Regulatory Citations & Verification
-- Summarize official circular numbers, docket IDs, or guidance documents.
-
-Keep formatting clean with clear markdown headers, bold keywords, and bullet points.`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-        },
-      });
-
-      const text = response.text || '';
-      const candidate = response.candidates?.[0];
-      const groundingMetadata = candidate?.groundingMetadata;
-      const groundingChunks = groundingMetadata?.groundingChunks || [];
-      const webSearchQueries = groundingMetadata?.webSearchQueries || [];
-
-      const sources = groundingChunks
-        .map((chunk: any) => chunk.web)
-        .filter(Boolean)
-        .map((web: any) => ({
-          title: web.title || 'Official Regulatory Source',
-          uri: web.uri || '',
-          agency: web.uri?.includes('fda.gov') ? 'FDA' : web.uri?.includes('ema.europa') ? 'EMA' : web.uri?.includes('who.int') ? 'WHO' : 'Health Authority'
-        }));
-
-      return res.json({
-        success: true,
-        query,
-        result: text,
-        sources,
-        webSearchQueries,
-        sourceType: 'Google Search Grounded (Gemini 3.8 Flash)',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // High quality offline fallback if AI client is unavailable
-    const fallbackResults = getOfflineGlobalPharmacyNews(query, category);
-    return res.json({
-      success: true,
-      query,
-      result: fallbackResults.text,
-      sources: fallbackResults.sources,
-      webSearchQueries: [query, `${query} FDA warning`, `${query} EMA alert`],
-      sourceType: 'Pharma Star Regulatory Archive (Offline Knowledgebase)',
-      timestamp: new Date().toISOString()
-    });
-  } catch (err: any) {
-    console.error('[Global Pharmacy Search Error]', err);
-    const fallbackResults = getOfflineGlobalPharmacyNews(req.body?.query || 'FDA EMA drug warnings', req.body?.category);
-    return res.json({
-      success: true,
-      query: req.body?.query,
-      result: fallbackResults.text,
-      sources: fallbackResults.sources,
-      webSearchQueries: [req.body?.query || 'FDA warnings'],
-      sourceType: 'Pharma Star Regulatory Archive (Offline Resilience)',
-      timestamp: new Date().toISOString(),
-      warning: 'Live network update experienced transient latency; serving verified regulatory data.'
-    });
-  }
-});
-
 // Bin Card & Stock Card Scanner / OCR Simulator Endpoint
 app.post('/api/bincard/scan', (req, res) => {
   const { folderId } = req.body;
@@ -339,52 +238,14 @@ app.get('/api/sponsorships', (req, res) => {
 });
 
 app.get('/api/payment-methods', (req, res) => {
-  const reqCountry = (req.headers['x-country-code'] || req.query.country || '').toString().toUpperCase();
-  const isEt = reqCountry === 'ET' || !reqCountry;
-  
   res.json({
-    activeCurrency: isEt ? 'ETB' : 'USD',
-    isEthiopia: isEt,
     cbe: { account: '1000262900367', holder: 'Dawid Aliyi', branch: 'Commercial Bank of Ethiopia' },
     telebirr: { phone: '0982852778', holder: 'Dawid Aliyi', ussd: '*127#' },
     cbeBirr: { ussd: '*847#', merchantCode: '262900' },
     chapa: { gateway: 'Chapa Unified Payment', supported: ['Telebirr', 'CBE Birr', 'Awash', 'Dashen', 'Cards'] },
     awash: { account: '0132047913300', holder: 'Dawid Aliyi' },
     dashen: { account: '5120262900367', holder: 'Dawid Aliyi' },
-    internationalCard: { amountUSD: 1.00, cpdCertificateUSD: 5.00, supported: ['Visa', 'Mastercard', 'Amex', 'PayPal', 'Apple Pay'] }
-  });
-});
-
-// Global Location & Currency Detection Endpoint
-app.get('/api/geo/detect', (req, res) => {
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : req.socket.remoteAddress || '';
-  const countryHeader = (req.headers['x-country-code'] || req.headers['cf-ipcountry'] || '').toString().toUpperCase();
-  const acceptLang = (req.headers['accept-language'] || '').toLowerCase();
-
-  const isEthiopia = countryHeader === 'ET' || 
-    acceptLang.includes('am-et') || 
-    acceptLang.includes('om-et') || 
-    acceptLang.includes('ti-et') ||
-    (acceptLang.startsWith('am') || acceptLang.startsWith('om'));
-
-  const countryCode = isEthiopia ? 'ET' : (countryHeader && countryHeader.length === 2 ? countryHeader : 'GLOBAL');
-  const currency = isEthiopia ? 'ETB' : 'USD';
-  const currencySymbol = isEthiopia ? 'ETB' : '$';
-
-  res.json({
-    countryCode,
-    currency,
-    currencySymbol,
-    isEthiopia,
-    ip: ip.replace(/^.*:/, ''),
-    exchangeRateRef: {
-      usdToEtb: 125.0,
-      note: '1 USD ≈ 125 ETB subsidized medical education tier'
-    },
-    supportedPaymentMethods: isEthiopia
-      ? ['Telebirr', 'CBE Mobile', 'CBE Birr (*847#)', 'Awash', 'Dashen', 'Chapa']
-      : ['International Visa / Mastercard', 'American Express', 'PayPal', 'Stripe', 'Apple Pay', 'Google Pay', 'SWIFT Wire']
+    internationalCard: { amountUSD: 1.00, cpdCertificateUSD: 5.00 }
   });
 });
 
@@ -1414,9 +1275,6 @@ app.post('/api/auth/google', async (req, res) => {
 
 // CPD Accreditation & License Cycle Tracking Router (/api/users/:userId/cpd-status)
 app.use('/api', cpdRouter);
-
-// Main global compliance strategy verification endpoint
-app.post('/api/v1/compliance/verify', verifyGlobalCompliance);
 
 // In-memory persistent letters store for Admin Portal & Corporate Invitations
 let lettersStore: SponsorInvitationLetter[] = [...initialSponsorLetters];

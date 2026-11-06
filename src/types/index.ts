@@ -62,15 +62,6 @@ export interface CourseQuizQuestion {
   clinicalPearl?: string;
 }
 
-export interface ChapterPage {
-  pageNumber: number;
-  title: string;
-  category: string;
-  content: string;
-  clinicalPearls?: string[];
-  keyFormulasOrGuidelines?: string[];
-}
-
 export interface CourseModule {
   id: string;
   title: string;
@@ -78,8 +69,6 @@ export interface CourseModule {
   content: string;
   clinicalPearls: string[];
   keyDrugsOrConcepts: string[];
-  chapterNumber?: number; // 1, 2, 3, 4
-  chapterPages?: ChapterPage[]; // 30 in-depth structured pages per chapter
   recommendedReadings?: string[];
   referenceTextbookChapters?: string[];
 }
@@ -282,8 +271,8 @@ export interface Guideline {
   authority: string;
   jurisdiction: 'National (Ethiopia)' | 'International';
   year: string;
-  status: 'Latest 2026' | 'Updated 2025' | 'Active Standard' | 'Directive No. 62/2026';
-  category: 'Infectious Disease' | 'Cardiology' | 'Endocrinology' | 'Nephrology' | 'Respiratory' | 'Formulary / STG' | 'Telehealth / Digital Pharmacy';
+  status: 'Latest 2026' | 'Updated 2025' | 'Active Standard';
+  category: 'Infectious Disease' | 'Cardiology' | 'Endocrinology' | 'Nephrology' | 'Respiratory' | 'Formulary / STG';
   summary: string;
   keyPoints: string[];
   sourceUrlName: string;
@@ -331,7 +320,6 @@ export interface CPDModule {
   description: string;
   competencyObjectives: string[];
   questions: CPDQuizQuestion[];
-  isEthics?: boolean;
 }
 
 export interface IssuedCPDCertificate {

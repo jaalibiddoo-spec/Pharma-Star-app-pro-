@@ -28,7 +28,7 @@ export const GuidelinesModule: React.FC = () => {
     }));
   };
 
-  const categories = ['All', 'Formulary / STG', 'Infectious Disease', 'Cardiology', 'Endocrinology', 'Nephrology', 'Respiratory', 'Telehealth / Digital Pharmacy'];
+  const categories = ['All', 'Formulary / STG', 'Infectious Disease', 'Cardiology', 'Endocrinology', 'Nephrology', 'Respiratory'];
 
   const filteredGuidelines = guidelines.filter(g => {
     const matchJurisdiction = jurisdictionFilter === 'All' || g.jurisdiction === jurisdictionFilter;

@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { ResearchManuscript, User } from '../types';
 import { sampleResearchManuscripts } from '../data/researchPublishingData';
-import { useCurrency } from '../context/CurrencyContext';
 
 interface Props {
   currentUser: User;
@@ -16,7 +15,6 @@ interface Props {
 }
 
 export const ResearchPublishingPortal: React.FC<Props> = ({ currentUser }) => {
-  const { isEthiopia } = useCurrency();
   const [manuscripts, setManuscripts] = useState<ResearchManuscript[]>(sampleResearchManuscripts);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -25,7 +23,7 @@ export const ResearchPublishingPortal: React.FC<Props> = ({ currentUser }) => {
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
   const [certManuscript, setCertManuscript] = useState<ResearchManuscript | null>(null);
 
-  // Form State for Submission
+  // Form State for 1,000 Birr Submission
   const [submitForm, setSubmitForm] = useState({
     title: '',
     abstract: '',
@@ -36,7 +34,7 @@ export const ResearchPublishingPortal: React.FC<Props> = ({ currentUser }) => {
     authorTitle: 'Clinical Pharmacist & Researcher',
     authorEmail: currentUser.email || 'researcher@institution.edu.et',
     keywords: 'Clinical Pharmacy, Ethiopia, Pharmacotherapy',
-    paymentMethod: (isEthiopia ? 'telebirr' : 'card_international') as any,
+    paymentMethod: 'telebirr' as const,
     paymentReference: '',
     fullText: ''
   });
