@@ -41,7 +41,7 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
 }) => {
   const { isEthiopia, currency, formatPrice } = useCurrency();
   const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
-  const [activeFeatureTab, setActiveFeatureTab] = useState<'international_suite' | 'global_search' | 'cpd' | 'telehealth_guidelines' | 'sponsorship_portal' | 'courses' | 'abc_ven' | 'dtp_interventions' | 'store_ifrr' | 'prescriptions' | 'research' | 'moa3d' | 'clinical' | 'consult' | 'offline'>('international_suite');
+  const [activeFeatureTab, setActiveFeatureTab] = useState<'cpd' | 'telehealth_guidelines' | 'sponsorship_portal' | 'courses' | 'abc_ven' | 'dtp_interventions' | 'store_ifrr' | 'prescriptions' | 'research' | 'moa3d' | 'clinical' | 'consult' | 'offline'>('cpd');
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(0);
   const [isSponsorLettersOpen, setIsSponsorLettersOpen] = useState(false);
 
@@ -52,8 +52,6 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
   };
 
   const featureTabs = [
-    { id: 'international_suite', title: 'Intl Clinical Suite (PGx/TDM)', icon: Globe, subtitle: 'CPIC precision & Bayesian TDM' },
-    { id: 'global_search', title: 'Global Search & FDA/EMA Radar', icon: Search, subtitle: 'Google Grounded real-time alerts' },
     { id: 'cpd', title: 'EFDA CPD & Cycle Status', icon: Award, subtitle: 'Directive No. 49/2022 renewal audit' },
     { id: 'telehealth_guidelines', title: 'Telemedicine & Telepharmacy Directives', icon: Video, subtitle: 'MoH & EFDA statutory standards' },
     { id: 'sponsorship_portal', title: 'Sponsors & Non-Gov History', icon: Building2, subtitle: 'Platinum, Gold, Bronze Non-Gov' },
@@ -186,15 +184,6 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => onLaunchApp('global_search')}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/40 text-xs font-bold transition shadow cursor-pointer"
-              title="Search live FDA/EMA Drug Warnings & Global News with Google Grounding"
-            >
-              <Search className="w-3.5 h-3.5 text-teal-400" />
-              <span>Global Radar</span>
-            </button>
-
             <CountryCurrencySelector />
 
             <button
@@ -591,152 +580,6 @@ export const OfficialWebsite: React.FC<OfficialWebsiteProps> = ({
 
         {/* Tab Content Display */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-10">
-          {activeFeatureTab === 'international_suite' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/10 text-teal-300 border border-teal-500/30 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-teal-400" />
-                    CPIC &bull; WHO AWaRe &bull; USP &bull; IDSA Standards
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                    Precision Medicine &amp; Clinical PK
-                  </span>
-                </div>
-
-                <h3 className="text-2xl md:text-3xl font-black text-white">
-                  World-Class Clinical Pharmacy &amp; Pharmacogenomics
-                </h3>
-
-                <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-                  Pharma Star App Pro integrates international clinical decision engines: CPIC Level A pharmacogenomics (CYP2C19, CYP2D6, HLA-B*5701, TPMT), Vancomycin Bayesian AUC24/MIC and Hartford aminoglycoside TDM calculators, WHO AWaRe antibiotic stewardship, Naranjo ADR causality scoring, and 6-language pictographic patient leaflets.
-                </p>
-
-                <div className="space-y-2 pt-2">
-                  <div className="flex items-center gap-2 text-xs text-slate-200">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Gene-drug action recommendations with FDA black box warning correlation</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-200">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Quantified Vancomycin AUC24/MIC (400-600) and Winter-Tozer Phenytoin corrections</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-200">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>FIP-endorsed 6-language patient counseling cards (English, Oromo, Amharic, French, Arabic, Spanish)</span>
-                  </div>
-                </div>
-
-                <div className="pt-3">
-                  <button
-                    onClick={() => onLaunchApp('international_suite')}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-black text-xs transition shadow-lg shadow-teal-500/25 flex items-center gap-2 cursor-pointer"
-                  >
-                    <Globe className="w-4 h-4" />
-                    <span>Open International Practice Suite</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-slate-950 rounded-2xl p-5 border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">
-                    Clinical Engine Highlights
-                  </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-teal-500/20 text-teal-300">
-                    6 Active Tools
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-xs">
-                  <span className="font-mono text-teal-400 font-bold text-[10px]">CPIC Pharmacogenomics</span>
-                  <h5 className="font-bold text-white">CYP2C19 &bull; Clopidogrel Resistance</h5>
-                  <p className="text-slate-400 text-[11px]">Identifies poor metabolizers (*2/*2) and guides immediate substitution to Prasugrel or Ticagrelor.</p>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-xs">
-                  <span className="font-mono text-amber-400 font-bold text-[10px]">Bayesian Pharmacokinetics</span>
-                  <h5 className="font-bold text-white">Vancomycin 24-Hour AUC Calculator</h5>
-                  <p className="text-slate-400 text-[11px]">Computes patient-specific elimination rate constant ($k_e$) and AUC24 targeting 400–600 mg·h/L.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeFeatureTab === 'global_search' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/10 text-teal-300 border border-teal-500/30 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-teal-400" />
-                    Google Search Grounding Engine
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                    Real-Time FDA &amp; EMA Intelligence
-                  </span>
-                </div>
-
-                <h3 className="text-2xl md:text-3xl font-black text-white">
-                  Real-Time FDA, EMA &amp; WHO Safety Alerts
-                </h3>
-
-                <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-                  Never miss critical pharmaceutical alerts. Pharma Star App Pro integrates direct Google Search Grounding to monitor real-time US FDA MedWatch Black Box Warnings, European Medicines Agency (EMA) PRAC pharmacovigilance recalls, WHO counterfeit drug alerts, and global supply deficit reports with verified primary citations.
-                </p>
-
-                <div className="space-y-2 pt-2">
-                  <div className="flex items-center gap-2 text-xs text-slate-200">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Real-time Google Grounded search across official health regulatory portals</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-200">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Primary regulatory documents and direct web citations extracted on the fly</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-200">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Actionable pharmacist triage, batch quarantine directives, and patient counseling notes</span>
-                  </div>
-                </div>
-
-                <div className="pt-3">
-                  <button
-                    onClick={() => onLaunchApp('global_search')}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-black text-xs transition shadow-lg shadow-teal-500/25 flex items-center gap-2 cursor-pointer"
-                  >
-                    <Search className="w-4 h-4" />
-                    <span>Launch Global Pharmacy Search</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-slate-950 rounded-2xl p-5 border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">
-                    Live Grounded Radar Preview
-                  </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300">
-                    Active Grounding
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="font-mono text-amber-400 font-bold">FDA Black Box Warning</span>
-                    <span className="text-slate-500">2026 Alert</span>
-                  </div>
-                  <h5 className="font-bold text-white">Compounded Semaglutide &amp; Multi-Dose Syringe Overdose Warnings</h5>
-                  <p className="text-slate-400 text-[11px]">FDA alerts regarding unauthorized salt forms and volume miscalculation on U-100 insulin syringes causing severe hospitalizations.</p>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="font-mono text-teal-400 font-bold">EMA PRAC Notice</span>
-                    <span className="text-slate-500">Pharmacovigilance</span>
-                  </div>
-                  <h5 className="font-bold text-white">Pseudoephedrine Measures on PRES &amp; RCVS Ischemia</h5>
-                  <p className="text-slate-400 text-[11px]">Contraindicated in severe or uncontrolled hypertension; stop immediately on sudden thunderclap headache.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {activeFeatureTab === 'cpd' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
               <div className="space-y-4">
